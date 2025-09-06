@@ -989,12 +989,11 @@ const chart = new PluginChartCOB({
 
     const chartOptions = this.generateChartOptions();
     
-    // Use optimized rendering options to reduce flicker
-    this.chartInstance.setOption(chartOptions, { 
-      notMerge: true,  // Merge with existing options instead of complete replace
-      silent: false,   // Allow events
-      lazyUpdate: true, // Batch updates for better performance
-      replaceMerge: ['series'] // Only replace series data, keep axes stable
+    // Use safer merging to avoid transient missing series models (prevents getRawIndex errors)
+    this.chartInstance.setOption(chartOptions, {
+      notMerge: false, // Allow echarts to merge new options into existing model
+      silent: false,
+      lazyUpdate: true
     });
   }
 
@@ -1027,15 +1026,15 @@ const chart = new PluginChartCOB({
         title: {
           text: `Order Book Heatmap with VWAP - ${this.options.symbol} (Waiting for data...)`,
           left: 'center',
-          textStyle: { color: '#FFF' }
+          textStyle: { color: '#000' }
         },
         grid: {
           left: '10%',
           right: '5%',
           bottom: '15%',
           top: '10%',
-          backgroundColor: '#1a222c',
-          borderColor: '#333',
+          backgroundColor: '#ffffff',
+          borderColor: '#ccc',
           borderWidth: 1,
           containLabel: true
         },
@@ -1043,9 +1042,9 @@ const chart = new PluginChartCOB({
           {
             type: 'category',
             data: [],
-            splitLine: { show: true, lineStyle: { color: '#333', type: 'dashed' } },
+            splitLine: { show: true, lineStyle: { color: '#ddd', type: 'dashed' } },
             axisLine: { show: false },
-            axisLabel: { color: '#AAA', interval: 'auto' }
+            axisLabel: { color: '#333', interval: 'auto' }
           },
           {
             type: 'category',
@@ -1060,10 +1059,10 @@ const chart = new PluginChartCOB({
             type: 'category',
             data: [],
             position: 'right',
-            splitLine: { show: true, lineStyle: { color: '#333' } },
+            splitLine: { show: true, lineStyle: { color: '#ddd' } },
             inverse: false,
             axisLine: { show: false },
-            axisLabel: { color: '#AAA' }
+            axisLabel: { color: '#333' }
           },
           {
             type: 'value',
@@ -1074,8 +1073,8 @@ const chart = new PluginChartCOB({
             axisLine: { show: false }
           }
         ],
-        series: [],
-        backgroundColor: '#121212'
+  series: [],
+  backgroundColor: '#ffffff'
       };
     }
 
@@ -1170,7 +1169,7 @@ const chart = new PluginChartCOB({
       title: {
         text: `Order Book Heatmap with VWAP${this.options.enablePriceLine ? (this.klineWebSocketUrl ? ' & Real-time Price Line' : ' & Price Line') : ''} - ${this.options.symbol}`,
         left: 'center',
-        textStyle: { color: '#FFF' }
+        textStyle: { color: '#000' }
       },
       tooltip: {
         position: 'top',
@@ -1189,8 +1188,8 @@ const chart = new PluginChartCOB({
         right: '5%',
         bottom: '15%',
         top: '10%',
-        backgroundColor: '#1a222c',
-        borderColor: '#333',
+        backgroundColor: '#ffffff',
+        borderColor: '#ccc',
         borderWidth: 1,
         containLabel: true
       },
@@ -1199,10 +1198,10 @@ const chart = new PluginChartCOB({
           // Primary X-axis for heatmap (seconds)
           type: 'category',
           data: this.timeAxisData,
-          splitLine: { show: true, lineStyle: { color: '#333', type: 'dashed' } },
+          splitLine: { show: true, lineStyle: { color: '#ddd', type: 'dashed' } },
           axisLine: { show: false },
           axisLabel: { 
-            color: '#AAA', 
+            color: '#333', 
             interval: 5, // Show every 5th label (every 5 seconds for 2-minute window)
             rotate: 0,
             fontSize: 10
@@ -1224,10 +1223,10 @@ const chart = new PluginChartCOB({
           type: 'category',
           data: this.priceAxisData,
           position: 'right',
-          splitLine: { show: true, lineStyle: { color: '#333' } },
-      inverse: false,
-          axisLine: { show: false },
-          axisLabel: { color: '#AAA' }
+      splitLine: { show: true, lineStyle: { color: '#ddd' } },
+    inverse: false,
+      axisLine: { show: false },
+      axisLabel: { color: '#333' }
         },
         {
           // Secondary Y-axis for price line (actual price values) - hidden
@@ -1379,7 +1378,7 @@ const chart = new PluginChartCOB({
             width: 4,
             type: 'dashed', // Dashed line style
             opacity: this.vwapHistory.length >= this.options.minDataPointsForVWAP ? 1 : 0, // Fade in when ready
-            shadowColor: this.options.vwapLineGlowColor || '#ffffff',
+            shadowColor: this.options.vwapLineGlowColor || '#333333',
             shadowBlur: this.options.vwapLineGlowBlur || 18,
             shadowOffsetY: 0,
             shadowOffsetX: 0
@@ -1393,7 +1392,7 @@ const chart = new PluginChartCOB({
           }
         }
       ].concat(this.getPriceLineSeries()), // Add price line series if enabled
-      backgroundColor: '#121212'
+  backgroundColor: '#ffffff'
     };
   }
 
