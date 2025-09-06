@@ -1,0 +1,526 @@
+[
+  {
+    "name": "SANIXLAB",
+    "address": "r9YuvurJ4zsJuGy8BzuDPmGRC1bUMSGGFW"
+  },
+  {
+    "name": "B&W",
+    "address": "r9pNm7AgsPtGn9suc9LH13uFekc9yF816e"
+  },
+  {
+    "name": "SAVVY MINING",
+    "address": "r4LC8ivAeujgBvajdnhaoyFKUEbPJQFPzJ"
+  },
+  {
+    "name": "BINANCE",
+    "address": "rNxp4h8apvRis6mJf9Sh8C6iRxfrDWN7AV"
+  },
+  {
+    "name": "BINANCE (10)",
+    "address": "rNU4eAowPuixS5ZCWaRL72UUeKgxcKExpK"
+  },
+  {
+    "name": "BINANCE (1)",
+    "address": "rDAE53VfMvftPB4ogpWGWvzkQxfht6JPxr"
+  },
+  {
+    "address": "rB3WNZc45gxzW31zxfXdkx8HusAhoqscPn",
+    "name": "Ripple (11)"
+  },
+  {
+    "address": "r9UUEXn3cx2seufBkDa8F86usfjWM6HiYp",
+    "name": "Ripple (10)"
+  },
+  {
+    "address": "rDdXiA3M4mYTQ4cFpWkVXfc2UaAXCFWeCK",
+    "name": "Ripple (12)"
+  },
+  {
+    "address": "rMhkqz3DeU7GUUJKGZofusbrTwZe6bDyb1",
+    "name": "Ripple (28)"
+  },
+  {
+    "address": "r9NpyVfLfUG8hatuCCHKzosyDtKnBdsEN3",
+    "name": "Ripple (9)"
+  },
+  {
+    "address": "rKDvgGUsNPZxsgmoemfrgXPS2Not4co2op",
+    "name": "Ripple (13)"
+  },
+  {
+    "address": "rGKHDyj4L6pc7DzRB6LWCR4YfZfzXj2Bdh",
+    "name": "Ripple (26)"
+  },
+  {
+    "address": "rHGfmgv54kpc3QCZGRXEQKUhLPndbasbQr",
+    "name": "Ripple (27)"
+  },
+  {
+    "address": "rs8ZPbYqgecRcDzQpJYAMhSxSi5htsjnza",
+    "name": "Binance (5)"
+  },
+  {
+    "address": "rPyCQm8E5j78PDbrfKF24fRC7qUAk1kDMZ",
+    "name": "Bithumb (12)"
+  },
+  {
+    "address": "rsXT3AQqhHDusFs3nQQuwcA1yXRLZJAXKw",
+    "name": "Uphold (12)"
+  },
+  {
+    "address": "rKwJaGmB5Hz24Qs2iyCaTdUuL1WsEXUWy5",
+    "name": "Ripple (14)"
+  },
+  {
+    "address": "rMQ98K56yXJbDGv49ZSmW51sLn94Xe1mu1",
+    "name": "Ripple (29)"
+  },
+  {
+    "address": "rN8pqRwLYuuvY7pUHurybPC8P6rLqVsu6o",
+    "name": "Ripple (15)"
+  },
+  {
+    "address": "rKveEyR1SrkWbJX214xcfH43ZsoGMb3PEv",
+    "name": "Ripple (39)"
+  },
+  {
+    "address": "rDxJNbV23mu9xsWoQHoBqZQvc77YcbJXwb",
+    "name": "UPbit (22)"
+  },
+  {
+    "address": "rw7m3CtVHwGSdhFjV4MyJozmZJv3DYQnsA",
+    "name": "bitbank (2)"
+  },
+  {
+    "address": "r99QSej32nAcjQAri65vE5ZXjw6xpUQ2Eh",
+    "name": "Coincheck (3)"
+  },
+  {
+    "address": "rBg2FuZT91C52Nny68houguJ4vt5x1o91m",
+    "name": "Ripple (1)"
+  },
+  {
+    "address": "rw2hzLZgiQ9q62KCuaTWuFHWfiX7JWg3wY",
+    "name": "Ripple (24)"
+  },
+  {
+    "address": "rsjFB8mPWqiZgPUaVh8XYqdfa59PE2d5LG",
+    "name": "Ripple (23)"
+  },
+  {
+    "address": "rDqGA2GfveHypDguQ1KXrJzYymFZmKxEsF",
+    "name": "Ripple (25)"
+  },
+  {
+    "address": "rp6aTJmW3nq1aKt3Jmuz4DPRxksT5PBjpH",
+    "name": "Ripple (22)"
+  },
+  {
+    "address": "rfL1mn4VTCoHdhHhHMwqpShCFUaDBRk6Z5",
+    "name": "UPbit (12)"
+  },
+  {
+    "address": "rwa7YXssGVAL9yPKw6QJtCen2UqZbRQqpM",
+    "name": "UPbit (13)"
+  },
+  {
+    "address": "rNcAdhSLXBrJ3aZUq22HaNtNEPpB5fR8Ri",
+    "name": "UPbit (14)"
+  },
+  {
+    "address": "r4G689g4KePYLKkyyumM1iUppTP4nhZwVC",
+    "name": "UPbit (21)"
+  },
+  {
+    "address": "rJo4m69u9Wd1F8fN2RbgAsJEF6a4hW1nSi",
+    "name": "UPbit (19)"
+  },
+  {
+    "address": "rLgn612WAgRoZ285YmsQ4t7kb8Ui3csdoU",
+    "name": "UPbit (20)"
+  },
+  {
+    "address": "rs48xReB6gjKtTnTfii93iwUhjhTJsW78B",
+    "name": "UPbit (18)"
+  },
+  {
+    "address": "rJWbw1u3oDDRcYLFqiWFjhGWRKVcBAWdgp",
+    "name": "UPbit (17)"
+  },
+  {
+    "address": "rMNUAfSz2spLEbaBwPnGtxTzZCajJifnzH",
+    "name": "UPbit (16)"
+  },
+  {
+    "address": "r38a3PtqW3M7LRESgaR4dyHjg3AxAmiZCt",
+    "name": "UPbit (15)"
+  },
+  {
+    "address": "rDfrrrBJZshSQDvfT2kmL9oUBdish52unH",
+    "name": "chrislarsen (4)"
+  },
+  {
+    "address": "rD6tdgGHG7hwGTA6P39aE7W89fbqxXRjzk",
+    "name": "chrislarsen (3)"
+  },
+  {
+    "address": "r476293LUcDqtjiSGJ5Dh44J1xBCDWeX3",
+    "name": "chrislarsen (1)"
+  },
+  {
+    "address": "r44CNwMWyJf4MEA1eHVMLPTkZ1LSv4Bzrv",
+    "name": "chrislarsen (2)"
+  },
+  {
+    "address": "rEvwSpejhGTbdAXbxRTpGAzPBQkBRZxN5s",
+    "name": "eToro (4)"
+  },
+  {
+    "address": "rJpj1Mv21gJzsbsVnkp1U4nqchZbmZ9pM5",
+    "name": "Binance (XRP-BF2 Reserve)"
+  },
+  {
+    "address": "rPoJNiCk7XSFLR28nH2hAbkYqjtMC3hK2k",
+    "name": "chrislarsen (6)"
+  },
+  {
+    "address": "rKNwXQh9GMjaU8uTqKLECsqyib47g5dMvo",
+    "name": "Crypto.com (4)"
+  },
+  {
+    "address": "rDKw32dPXHfoeGoD3kVtm76ia1WbxYtU7D",
+    "name": "Coinone (5)"
+  },
+  {
+    "address": "rhREXVHV938ToGkdJQ9NCYEY4x8kSEtjna",
+    "name": "chrislarsen (5)"
+  },
+  {
+    "address": "rP3mUZyCDzZkTSd1VHoBbFt8HGm8fyq8qV",
+    "name": "Binance (17)"
+  },
+  {
+    "address": "rPz2qA93PeRCyHyFCqyNggnyycJR1N4iNf",
+    "name": "Binance (13)"
+  },
+  {
+    "address": "rpynXLU7rAHtdKmdwgiVqLSfz9xwDvK4hy",
+    "name": "Ripple (47)"
+  },
+  {
+    "address": "rBZz5VCEXpYzvhN8jWCC2Sb2QVDzsM5WKs",
+    "name": "Ripple (49)"
+  },
+  {
+    "address": "rG2eEaeiJou6cVQ3KtX7XMNwGhuW99xmHP",
+    "name": "ahbritto (12)"
+  },
+  {
+    "address": "ragKXjY7cBTXUus32sYHZVfkY46Nt2Q829",
+    "name": "ahbritto (4)"
+  },
+  {
+    "address": "rsF9cc6gniHLTR2Jng29ng21ez7L9PpmPt",
+    "name": "ahbritto (5)"
+  },
+  {
+    "address": "rJ5EJYsW6Vkeruj1LAmQYq3VP7QUQKBH1W",
+    "name": "ahbritto (6)"
+  },
+  {
+    "address": "rsXNUCJkXeyFuGHyfRnuWPita2ns32upBD",
+    "name": "ahbritto (3)"
+  },
+  {
+    "address": "rQKZSMgmBJvv3FvWj1vuGjUXnegTqJc25z",
+    "name": "ahbritto (2)"
+  },
+  {
+    "address": "rhtufNsYfrozs4GvSq4HMYcR9y3dg8FWdC",
+    "name": "Ripple (52)"
+  },
+  {
+    "address": "rhWVCsCXrkwTeLBg6DyDr7abDaHz3zAKmn",
+    "name": "bitFlyer (4)"
+  },
+  {
+    "address": "rBYpyCjNwBDQFrgEdVfyosSgQS6iL6sTHe",
+    "name": "Gemini (3)"
+  },
+  {
+    "address": "rBEc94rUFfLfTDwwGN7rQGBHc883c2QHhx",
+    "name": "Uphold (4)"
+  },
+  {
+    "address": "rp7TCczQuQo61dUo1oAgwdpRxLrA8vDaNV",
+    "name": "Kraken (4)"
+  },
+  {
+    "address": "rsYFhEk4uFvwvvKJomHL7KhdF29r2sw9KD",
+    "name": "Korbit (7)"
+  },
+  {
+    "address": "r94JFtstbXmyG21h3RHKcNfkAHxAQ6HSGC",
+    "name": "BTC Markets (1)"
+  },
+  {
+    "address": "rEbKBkgKSQgm5x8PycZc5VjdCVTmqYfcY1",
+    "name": "ahbritto (11)"
+  },
+  {
+    "address": "rDecw8UhrZZUiaWc91e571b3TL41MUioh7",
+    "name": "Binance (16)"
+  },
+  {
+    "address": "rE3hWEGquaixF2XwirNbA1ds4m55LxNZPk",
+    "name": "Bitfinex (2)"
+  },
+  {
+    "address": "rKV8HEL3vLc6q9waTiJcewdRdSFyx67QFb",
+    "name": "Crypto.com Exchange (1)"
+  },
+  {
+    "address": "r4DbbWjsZQ2hCcxmjncr7MRjpXTBPckGa9",
+    "name": "Bitrue Cold (2)"
+  },
+  {
+    "address": "rDAE53VfMvftPB4ogpWGWvzkQxfht6JPxr",
+    "name": "Binance (6)"
+  },
+  {
+    "address": "rJqiMb94hyz41SBTNr2AyPNW8AzELa8nE",
+    "name": "Ripple (50)"
+  },
+  {
+    "address": "rBxszqhQkhPALtkSpGuVeqR6hNtZ8xTH3T",
+    "name": "KuCoin (7)"
+  },
+  {
+    "address": "rwBHqnCgNRnk3Kyoc6zon6Wt4Wujj3HNGe",
+    "name": "Bybit (5)"
+  },
+  {
+    "address": "rMvCasZ9cohYrSZRNYPTZfoaaSUQMfgQ8G",
+    "name": "Bybit (4)"
+  },
+  {
+    "address": "raQxZLtqurEXvH5sgijrif7yXMNwvFRkJN",
+    "name": "Bybit (6)"
+  },
+  {
+    "address": "raJHqa1o57DwjtrLCZjdkMKRtfHnbrwSse",
+    "name": "Firi (4)"
+  },
+  {
+    "address": "rNRc2S2GSefSkTkAiyjE6LDzMonpeHp6jS",
+    "name": "SBI VC Trade (4)"
+  },
+  {
+    "address": "rPJ5GFpyDLv7gqeB1uZVUBwDwi41kaXN5A",
+    "name": "Binance (12)"
+  },
+  {
+    "address": "rGDreBvnHrX1get7na3J4oowN19ny4GzFn",
+    "name": "Bitget Global"
+  },
+  {
+    "name": "BINANCE (2)",
+    "address": "rBtttd61FExHC68vsZ8dqmS3DfjFEceA1A"
+  },
+  {
+    "name": "Crypto.com",
+    "address": "r4DymtkgUAh2wqRxVfdd3Xtswzim6eC6c5"
+  },
+  {
+    "name": "Binance",
+    "address": "rhWj9gaovwu2hZxYW7p388P8GRbuXFLQkK"
+  },
+  {
+    "name": "Kraken",
+    "address": "rLHzPsX6oXkzU2qL12kHCH8G8cnZv1rBJh"
+  },
+  {
+    "name": "Coinbase",
+    "address": "rUjfTQpvBr6wsGGxMw6sRmRQGG76nvp8Ln"
+  },
+  {
+    "name": "UPbit",
+    "address": "raQwCVAJVqjrVm1Nj5SFRcX8i22BhdC9WA"
+  },
+  {
+    "name": "Coinbase (10)",
+    "address": "rRmgo6NW1W7GHjC5qEpcpQnq8NE74ZS1P"
+  },
+  {
+    "address": "rB3WNZc45gxzW31zxfXdkx8HusAhoqscPn",
+    "name": "Ripple (11)"
+  },
+  {
+    "address": "r9UUEXn3cx2seufBkDa8F86usfjWM6HiYp",
+    "name": "Ripple (10)"
+  },
+  {
+    "address": "rDdXiA3M4mYTQ4cFpWkVXfc2UaAXCFWeCK",
+    "name": "Ripple (12)"
+  },
+  {
+    "address": "rMhkqz3DeU7GUUJKGZofusbrTwZe6bDyb1",
+    "name": "Ripple (28)"
+  },
+  {
+    "address": "r9NpyVfLfUG8hatuCCHKzosyDtKnBdsEN3",
+    "name": "Ripple (9)"
+  },
+  {
+    "address": "rKDvgGUsNPZxsgmoemfrgXPS2Not4co2op",
+    "name": "Ripple (13)"
+  },
+  {
+    "address": "rGKHDyj4L6pc7DzRB6LWCR4YfZfzXj2Bdh",
+    "name": "Ripple (26)"
+  },
+  {
+    "address": "rHGfmgv54kpc3QCZGRXEQKUhLPndbasbQr",
+    "name": "Ripple (27)"
+  },
+  {
+    "address": "rs8ZPbYqgecRcDzQpJYAMhSxSi5htsjnza",
+    "name": "Binance (5)"
+  },
+  {
+    "address": "rPyCQm8E5j78PDbrfKF24fRC7qUAk1kDMZ",
+    "name": "Bithumb (12)"
+  },
+  {
+    "address": "rsXT3AQqhHDusFs3nQQuwcA1yXRLZJAXKw",
+    "name": "Uphold (12)"
+  },
+  {
+    "address": "rKwJaGmB5Hz24Qs2iyCaTdUuL1WsEXUWy5",
+    "name": "Ripple (14)"
+  },
+  {
+    "address": "rMQ98K56yXJbDGv49ZSmW51sLn94Xe1mu1",
+    "name": "Ripple (29)"
+  },
+  {
+    "address": "rN8pqRwLYuuvY7pUHurybPC8P6rLqVsu6o",
+    "name": "Ripple (15)"
+  },
+  {
+    "address": "rKveEyR1SrkWbJX214xcfH43ZsoGMb3PEv",
+    "name": "Ripple (39)"
+  },
+  {
+    "address": "rDxJNbV23mu9xsWoQHoBqZQvc77YcbJXwb",
+    "name": "UPbit (22)"
+  },
+  {
+    "address": "rw7m3CtVHwGSdhFjV4MyJozmZJv3DYQnsA",
+    "name": "bitbank (2)"
+  },
+  {
+    "address": "r99QSej32nAcjQAri65vE5ZXjw6xpUQ2Eh",
+    "name": "Coincheck (3)"
+  },
+  {
+    "address": "rBg2FuZT91C52Nny68houguJ4vt5x1o91m",
+    "name": "Ripple (1)"
+  },
+  {
+    "address": "rw2hzLZgiQ9q62KCuaTWuFHWfiX7JWg3wY",
+    "name": "Ripple (24)"
+  },
+  {
+    "address": "rsjFB8mPWqiZgPUaVh8XYqdfa59PE2d5LG",
+    "name": "Ripple (23)"
+  },
+  {
+    "address": "rDqGA2GfveHypDguQ1KXrJzYymFZmKxEsF",
+    "name": "Ripple (25)"
+  },
+  {
+    "address": "rp6aTJmW3nq1aKt3Jmuz4DPRxksT5PBjpH",
+    "name": "Ripple (22)"
+  },
+  {
+    "address": "rfL1mn4VTCoHdhHhHMwqpShCFUaDBRk6Z5",
+    "name": "UPbit (12)"
+  },
+  {
+    "address": "rwa7YXssGVAL9yPKw6QJtCen2UqZbRQqpM",
+    "name": "UPbit (13)"
+  },
+  {
+    "address": "rNcAdhSLXBrJ3aZUq22HaNtNEPpB5fR8Ri",
+    "name": "UPbit (14)"
+  },
+  {
+    "address": "r4G689g4KePYLKkyyumM1iUppTP4nhZwVC",
+    "name": "UPbit (21)"
+  },
+  {
+    "address": "rJo4m69u9Wd1F8fN2RbgAsJEF6a4hW1nSi",
+    "name": "UPbit (19)"
+  },
+  {
+    "address": "rLgn612WAgRoZ285YmsQ4t7kb8Ui3csdoU",
+    "name": "UPbit (20)"
+  },
+  {
+    "address": "rs48xReB6gjKtTnTfii93iwUhjhTJsW78B",
+    "name": "UPbit (18)"
+  },
+  {
+    "address": "rJWbw1u3oDDRcYLFqiWFjhGWRKVcBAWdgp",
+    "name": "UPbit (17)"
+  },
+  {
+    "address": "rMNUAfSz2spLEbaBwPnGtxTzZCajJifnzH",
+    "name": "UPbit (16)"
+  },
+  {
+    "address": "r38a3PtqW3M7LRESgaR4dyHjg3AxAmiZCt",
+    "name": "UPbit (15)"
+  },
+  {
+    "name": "SAVVY MINING - (FEEDER)",
+    "address": "rB6tCzRVCNG1YYESjqPFYBm9Rj6yXgawvR"
+  },
+  {
+    "name": "SAVVY MINING (MAIN)",
+    "address": "raoQY5WsKHURJHeVyo8TtR5M49iH4CUJ5W"
+  },
+  {
+    "name": "SAVVY MINING (COLLECTOR)",
+    "address": "rPs8PaXv1nJXcf6RiySgEEqZMtr5RkhHkc"
+  },
+  {
+    "name": "ARMY (Issuer)",
+    "address": "rGG3wQ4kUzd7Jnmk1n5NWPZjjut62kCBfC"
+  },
+  {
+    "name": "SANIXLAB (HORIZON)",
+    "address": "rnW2QgLG1kNyazNJQgzfh8eugmeXMcRGzb"
+  },
+  {
+    "name": "SANIXLAB (MAIN)",
+    "address": "rpwYnPuFwZz7DN9hsneRRWLruv1XyPAuLo"
+  },
+  {
+    "name": "TRUSTLINE (RLUSD)",
+    "address": "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De"
+  },
+  {
+    "name": "CRYTONODE (MAIN)",
+    "address": "rhGokbazfhfSCgm9GRhCsR9XWkN2RyQSQT"
+  },
+  {
+    "name": "SAVVY MINING (XRP)",
+    "address": "rEiq1iAcpzP8WLjezP9MzAQEJ7jqKMLFSA"
+  },
+  {
+    "name": "MEXC (XRP)",
+    "address": "rs2dgzYeqYqsk8bvkQR5YPyqsXYcA24MP2"
+  }
+]

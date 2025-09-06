@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ledger Graph Viewer</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #111826; color: #E0E0E0; font-family: Arial, sans-serif; }
+    #toolbar { position: fixed; top: 8px; left: 8px; z-index: 1000; display: flex; gap: 8px; }
+    #toolbar button { background:#000; color:#E0E0E0; border:1px solid #222; padding:6px 10px; border-radius:4px; cursor:pointer; }
+    #container { position: absolute; inset: 0; }
+    #pluginChartWebkitDep { width: 100%; height: 100%; }
+    #hint { position: fixed; bottom: 12px; left: 12px; color:#9AA4B2; font-size: 12px; opacity: 0.8; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="../charts/pluginChartWebkitDep.js"></script>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="btnClear">Clear</button>
+    <button id="btnExport">Download JSON</button>
+    <button id="btnCopy">Copy JSON</button>
+  </div>
+  <div id="container">
+    <div id="pluginChartWebkitDep"></div>
+  </div>
+  <div id="hint">Waiting for graph data... If nothing appears, return to the previous window and click "Open Graph Viewer" after building the graph.</div>
+
+  <script>
+    let chartWidget = null;
+
+    function initChart() {
+      chartWidget = new PluginChartWebkitDep({
+        containerId: 'pluginChartWebkitDep',
+        pluginName: 'Ledger Graph'
+      });
+      chartWidget.initialize();
+    }
+
+    function notifyReady() {
+      try {
+        if (window.opener) {
+          window.opener.postMessage({ type: 'graph-view-ready' }, '*');
+        }
+      } catch {}
+    }
+
+    function attachMessageHandler() {
+      window.addEventListener('message', (evt) => {
+        const msg = evt.data || {};
+        if (msg.type === 'ledger-graph-data' && msg.payload && chartWidget) {
+          chartWidget.setGraphData(msg.payload);
+          const hint = document.getElementById('hint');
+          if (hint) hint.style.display = 'none';
+        }
+      });
+    }
+
+    function attachToolbar() {
+      const btnClear = document.getElementById('btnClear');
+      const btnExport = document.getElementById('btnExport');
+      const btnCopy = document.getElementById('btnCopy');
+
+      btnClear.addEventListener('click', () => chartWidget && chartWidget.clearState());
+
+      btnExport.addEventListener('click', () => {
+        if (!chartWidget || !chartWidget.graphData) return;
+        const blob = new Blob([JSON.stringify(chartWidget.graphData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ledger-graph.json';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+      });
+
+      btnCopy.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(chartWidget?.graphData || {}, null, 2));
+          alert('Graph JSON copied');
+        } catch { alert('Copy failed'); }
+      });
+    }
+
+    window.addEventListener('load', () => {
+      initChart();
+      attachMessageHandler();
+      attachToolbar();
+      // Send ready signal a few times in case the opener listener isn't attached yet
+      notifyReady();
+      setTimeout(notifyReady, 500);
+      setTimeout(notifyReady, 1500);
+    });
+  </script>
+</body>
+</html>

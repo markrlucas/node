@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XRP Ledger Transaction Viewer</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: #f4f6fb;
+      margin: 0;
+      padding: 0;
+      color: #222;
+    }
+    .container {
+      max-width: 95%;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      padding: 32px 40px 40px 40px;
+    }
+    h1 {
+      text-align: center;
+      font-weight: 700;
+      color: #2a3b8f;
+      margin-bottom: 24px;
+    }
+    form {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    input[type="text"], input[type="number"] {
+      padding: 10px 14px;
+      border: 1px solid #cfd8dc;
+      border-radius: 6px;
+      font-size: 1rem;
+      width: 320px;
+      max-width: 100%;
+    }
+    input[type="number"] {
+      width: 100px;
+    }
+    button {
+      background: #2a3b8f;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1a265c;
+    }
+    .error {
+      color: #c0392b;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      background: #fafbfc;
+      margin-top: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.97rem;
+      background: #fafbfc;
+      table-layout: auto;
+    }
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e0e4ea;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #e8eaf6;
+      color: #2a3b8f;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    td {
+      /* Remove max-width to allow column resizer to expand/shrink columns */
+      /* max-width: 350px; */
+      max-width: none;
+      vertical-align: top;
+    }
+    .cell-content {
+      max-height: 100px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  /* Memo header icon buttons */
+  .memo-col-actions { display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:nowrap; }
+  .memo-col-actions .icon-btn { background:transparent; border:none; padding:2px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:inherit; }
+  .memo-col-actions .icon-btn svg { width:1.25em; height:1.25em; display:block; stroke:currentColor; fill:none; }
+  .memo-col-actions .icon-btn:hover { filter:brightness(0.9); }
+  .memo-col-actions .btn-decode { color:#6C5CE7; }
+  .memo-col-actions .btn-copy-hex { color:#0984E3; }
+  .memo-col-actions .btn-copy-text { color:#00B894; }
+  /* Memo cell formatting */
+  .memo-actions { display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:nowrap; overflow-x:auto; }
+  .memo-actions button { white-space:nowrap; padding:4px 10px; font-size:0.92rem; line-height:1.2; background:#2a3b8f; color:#fff; border:none; border-radius:6px; }
+  .memo-actions button:disabled { opacity:0.6; cursor:not-allowed; }
+  .memo-hex pre, .memo-text pre { max-width:520px; white-space:pre-wrap; overflow:auto; word-break:break-word; margin:0; }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    .loading {
+      text-align: center;
+      color: #888;
+      margin-top: 24px;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 12px; }
+      form { flex-direction: column; align-items: stretch; }
+      input[type="text"], input[type="number"] { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>XRP Ledger Transaction Viewer</h1>
+    <div id="totalAmount" style="text-align: right; font-size: 1.2em; margin-bottom: 16px; display: none;"></div>
+    <form id="txForm">
+      <div style="position:relative;flex:1;min-width:220px;max-width:340px;">
+        <input type="text" id="address" placeholder="Enter XRP Address or select from address book" autocomplete="off" required style="width:100%;" />
+        <div id="addressDropdown" style="display:none;position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #cfd8dc;z-index:10;max-height:220px;overflow-y:auto;border-radius:0 0 6px 6px;box-shadow:0 2px 8px rgba(0,0,0,0.08);"></div>
+      </div>
+      <input type="number" id="limit" placeholder="Limit" min="1" max="300" value="50" />
+      <input type="number" id="depth" placeholder="Depth" min="1" max="6" value="2" />
+      <!-- New: Minimum XRP threshold for crawl (prefers DeliverMax when present) -->
+      <input type="number" id="minAmount" placeholder="Min XRP" min="0" step="0.000001" value="0" />
+      <button type="submit">Fetch Transactions</button>
+      <button type="button" id="buildGraphBtn">Build Graph JSON</button>
+      <button type="button" id="openGraphViewerBtn">Open Graph Viewer</button>
+      <button type="button" id="quickAddBtn">Quick Add</button>
+        <!-- TransactionType filter -->
+        <select id="transactionTypeFilter" style="min-width:160px;">
+          <option value="">All Transaction Types</option>
+        </select>
+    </form>
+    <!-- Quick Add Modal -->
+    <div id="quickAddModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:#fff;padding:32px 24px 24px 24px;border-radius:10px;box-shadow:0 2px 16px rgba(0,0,0,0.15);min-width:320px;max-width:90vw;">
+        <h2 style="margin-top:0;margin-bottom:18px;font-size:1.2em;color:#2a3b8f;">Add to Address Book</h2>
+        <form id="quickAddForm">
+          <div style="margin-bottom:14px;">
+            <label for="quickAddName" style="font-weight:700;">Name:</label><br/>
+            <input type="text" id="quickAddName" style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #cfd8dc;" required />
+          </div>
+          <div style="margin-bottom:18px;">
+            <label for="quickAddAddress" style="font-weight:700;">Ledger Address:</label><br/>
+            <input type="text" id="quickAddAddress" style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #cfd8dc;" required />
+          </div>
+          <div style="text-align:right;">
+            <button type="button" id="quickAddCancel" style="background:#cfd8dc;color:#222;margin-right:10px;">Cancel</button>
+            <button type="submit" style="background:#2a3b8f;color:#fff;">Add</button>
+          </div>
+          <div id="quickAddError" style="color:#c0392b;margin-top:10px;"></div>
+        </form>
+      </div>
+    </div>
+    <div style="text-align: center; margin-bottom: 16px; display:flex;gap:24px;justify-content:center;align-items:center;flex-wrap:wrap;">
+      <div>
+        <label class="switch">
+          <input type="checkbox" id="showNameToggle" checked>
+          <span class="slider round"></span>
+        </label>
+        <span style="margin-left: 8px;">Show Names</span>
+      </div>
+      <div>
+        <label class="switch">
+          <input type="checkbox" id="cachedToggle">
+          <span class="slider round"></span>
+        </label>
+        <span style="margin-left: 8px;">Cached Mode</span>
+      </div>
+      <div>
+        <label class="switch">
+          <input type="checkbox" id="filterDeliverMaxToggle">
+          <span class="slider round"></span>
+        </label>
+        <span style="margin-left: 8px;">Hide DeliverMax ≤ 1</span>
+      </div>
+    </div>
+    <div class="error" id="error"></div>
+    <div class="loading" id="loading" style="display:none;">Loading...</div>
+    <div id="columnSelectorWrap" style="display:none;margin-bottom:16px;"></div>
+    <div class="table-wrap" id="tableWrap" style="display:none;"></div>
+    <!-- New: Graph JSON preview / actions -->
+    <div id="graphSection" style="display:none;margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;">
+        <div style="font-weight:700;color:#2a3b8f;">Graph Data (nodes & links)</div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="copyGraphJson">Copy JSON</button>
+          <button type="button" id="downloadGraphJson">Download JSON</button>
+        </div>
+      </div>
+      <pre id="graphJson" style="background:#0b1021;color:#cbe4ff;padding:12px;border-radius:8px;max-height:320px;overflow:auto;white-space:pre-wrap;margin:0;"></pre>
+    </div>
+  </div>
+  <script src="resizer.js"></script>
+  <script>
+  const form = document.getElementById('txForm');
+  const errorDiv = document.getElementById('error');
+  const loadingDiv = document.getElementById('loading');
+  const tableWrap = document.getElementById('tableWrap');
+  const columnSelectorWrap = document.getElementById('columnSelectorWrap');
+  const totalAmountDiv = document.getElementById('totalAmount');
+  // New: graph UI refs
+  const depthInput = document.getElementById('depth');
+  // New: min amount input
+  const minAmountInput = document.getElementById('minAmount');
+  const buildGraphBtn = document.getElementById('buildGraphBtn');
+  const graphSection = document.getElementById('graphSection');
+  const graphJsonPre = document.getElementById('graphJson');
+  const copyGraphJsonBtn = document.getElementById('copyGraphJson');
+  const downloadGraphJsonBtn = document.getElementById('downloadGraphJson');
+  const openGraphViewerBtn = document.getElementById('openGraphViewerBtn');
+
+  // Address book state
+  let addressBook = [];
+  let addressBookMap = {};
+  let showNames = true;
+
+  // Cached mode state
+  let useCachedAddressBook = false;
+    
+  // Filter state
+  let filterDeliverMax = false;
+     
+  // Column selector state
+  let allKeys = [];
+  let visibleKeys = [];
+  let lastData = [];
+  // Track initialization and previously seen columns so toggles work correctly
+  let columnsInitialized = false;
+  let previousAllKeys = [];
+
+    // TransactionType filter state
+    const transactionTypeFilter = document.getElementById('transactionTypeFilter');
+    let transactionTypes = [];
+    let selectedTransactionType = '';
+
+    if (transactionTypeFilter) {
+      transactionTypeFilter.addEventListener('change', () => {
+        selectedTransactionType = transactionTypeFilter.value;
+        if (lastData.length) {
+          loadingDiv.style.display = 'block';
+          requestAnimationFrame(() => {
+            renderTable(lastData);
+            loadingDiv.style.display = 'none';
+          });
+        }
+      });
+    }
+
+  // New: last graph data
+  let currentGraphData = null;
+  // Memo decode state per column key
+  const memoDecodeColumns = new Set();
+
+  // On page load: load address book, check for address in URL
+  window.addEventListener('load', async () => {
+    showNames = true;
+    document.getElementById('showNameToggle').checked = true;
+    const cachedToggleEl = document.getElementById('cachedToggle');
+    if (cachedToggleEl) {
+      cachedToggleEl.checked = false;
+      // Ensure runtime flag matches checkbox
+      useCachedAddressBook = cachedToggleEl.checked;
+    }
+    const filterDeliverMaxEl = document.getElementById('filterDeliverMaxToggle');
+    if (filterDeliverMaxEl) {
+      filterDeliverMaxEl.checked = false;
+      filterDeliverMax = false;
+    }
+    await loadAddressBook();
+    const params = new URLSearchParams(window.location.search);
+    const address = params.get('address');
+    if (address) {
+      const addrInput = document.getElementById('address');
+      addrInput.value = address;
+      // Force-refresh the dropdown to reflect navigated address and latest address book
+      updateAddressDropdown();
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    }
+  });
+
+  // Ensure dropdown refreshes when returning via back/forward cache
+  window.addEventListener('pageshow', async () => {
+    // Reload address book (honors Cached Mode toggle) and refresh dropdown
+    await loadAddressBook();
+    updateAddressDropdown();
+  });
+
+  async function loadAddressBook() {
+    try {
+        const url = useCachedAddressBook
+          ? '/api/ledger/addresses'
+          : `/api/ledger/addresses?_=${Date.now()}`;
+        const fetchOpts = useCachedAddressBook
+          ? {}
+          : { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } };
+        const res = await fetch(url, fetchOpts);
+        if (!res.ok) throw new Error('Failed to load address book');
+        addressBook = await res.json();
+        addressBookMap = {};
+        addressBook.forEach(entry => {
+          if (entry.address) addressBookMap[entry.address] = entry.name;
+        });
+        updateAddressDropdown();
+      } catch (e) {
+        addressBook = [];
+        addressBookMap = {};
+        updateAddressDropdown();
+      }
+  }
+  // Show Names toggle
+  const showNameToggle = document.getElementById('showNameToggle');
+  showNameToggle.addEventListener('change', () => {
+    showNames = showNameToggle.checked;
+    if (lastData.length) renderTable(lastData);
+    // Re-render graph labels if present
+    if (currentGraphData) renderGraphJson(currentGraphData);
+  });
+  // Cached Mode toggle
+  const cachedToggle = document.getElementById('cachedToggle');
+  if (cachedToggle) {
+    cachedToggle.addEventListener('change', async () => {
+      useCachedAddressBook = cachedToggle.checked;
+      await loadAddressBook();
+      if (currentGraphData) renderGraphJson(currentGraphData);
+    });
+  }
+  // Filter DeliverMax toggle
+  const filterDeliverMaxToggle = document.getElementById('filterDeliverMaxToggle');
+  if (filterDeliverMaxToggle) {
+    filterDeliverMaxToggle.addEventListener('change', () => {
+      filterDeliverMax = filterDeliverMaxToggle.checked;
+      if (lastData.length) renderTable(lastData);
+      // Note: filter only applies to building the graph on next run
+    });
+  }
+
+  // Helper: parse XRPL amount to XRP (number)
+  function parseAmountToXRP(val) {
+    if (val == null) return 0;
+    if (typeof val === 'string') {
+      // drops string
+      const n = Number(val);
+      return isNaN(n) ? 0 : n / 1_000_000;
+    }
+    if (typeof val === 'number') {
+      // assume drops
+      return val / 1_000_000;
+    }
+    if (typeof val === 'object') {
+      const { currency, value } = val;
+      if (currency === 'XRP' && value != null) {
+        const n = Number(value);
+        return isNaN(n) ? 0 : n;
+      }
+      return 0; // Non-XRP currencies ignored for this filter
+    }
+    return 0;
+  }
+  
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorDiv.textContent = '';
+    tableWrap.style.display = 'none';
+    totalAmountDiv.style.display = 'none';
+    columnSelectorWrap.style.display = 'none';
+    loadingDiv.style.display = 'block';
+    tableWrap.innerHTML = '';
+    const address = document.getElementById('address').value.trim();
+    const limit = document.getElementById('limit').value.trim() || 50;
+    if (!address) {
+      errorDiv.textContent = 'Please enter a valid XRP address.';
+      loadingDiv.style.display = 'none';
+      return;
+    }
+    try {
+      const res = await fetch(`/api/ledger/transactions/${address}?limit=${limit}`);
+      if (!res.ok) throw new Error('Failed to fetch transactions.');
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        errorDiv.textContent = 'No transactions found.';
+        loadingDiv.style.display = 'none';
+        return;
+      }
+      lastData = data;
+    updateTransactionTypeDropdown(data);
+    renderTable(data);
+  // Populate TransactionType dropdown based on data
+  function updateTransactionTypeDropdown(data) {
+    if (!transactionTypeFilter) return;
+    const types = Array.from(new Set((data || []).map(tx => tx.TransactionType).filter(Boolean)));
+    transactionTypes = types;
+    let html = '<option value="">All Transaction Types</option>';
+    types.forEach(type => {
+      html += `<option value="${type}">${type}</option>`;
+    });
+    transactionTypeFilter.innerHTML = html;
+    // Restore selection if possible
+    if (selectedTransactionType && types.includes(selectedTransactionType)) {
+      transactionTypeFilter.value = selectedTransactionType;
+    } else {
+      selectedTransactionType = '';
+      transactionTypeFilter.value = '';
+    }
+  }
+    } catch (err) {
+      errorDiv.textContent = err.message || 'Error fetching transactions.';
+    } finally {
+      loadingDiv.style.display = 'none';
+    }
+  });
+
+  // Quick Add logic
+  const quickAddBtn = document.getElementById('quickAddBtn');
+  const quickAddModal = document.getElementById('quickAddModal');
+  const quickAddForm = document.getElementById('quickAddForm');
+  const quickAddName = document.getElementById('quickAddName');
+  const quickAddAddress = document.getElementById('quickAddAddress');
+  const quickAddCancel = document.getElementById('quickAddCancel');
+  const quickAddError = document.getElementById('quickAddError');
+
+  quickAddBtn.addEventListener('click', () => {
+    quickAddName.value = '';
+    quickAddAddress.value = document.getElementById('address').value.trim();
+    quickAddError.textContent = '';
+    quickAddModal.style.display = 'flex';
+    quickAddName.focus();
+  });
+  quickAddCancel.addEventListener('click', () => {
+    quickAddModal.style.display = 'none';
+  });
+  quickAddForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = quickAddName.value.trim();
+    const address = quickAddAddress.value.trim();
+    if (!name || !address) {
+      quickAddError.textContent = 'Both fields are required.';
+      return;
+    }
+    try {
+      const res = await fetch('/api/ledger/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, address })
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        quickAddError.textContent = result.error || 'Failed to add address.';
+        return;
+      }
+      await loadAddressBook();
+      quickAddModal.style.display = 'none';
+      alert('Address added to address book!');
+    } catch (err) {
+      quickAddError.textContent = err.message || 'Failed to add address.';
+    }
+  });
+
+  function renderTable(data) {
+    const sourceForKeys = (lastData && lastData.length) ? lastData : data;
+    // Collect all unique keys
+    allKeys = Array.from(sourceForKeys.reduce((set, tx) => {
+       Object.keys(tx).forEach(k => set.add(k));
+       return set;
+     }, new Set()));
+
+     // Initialize or update visibleKeys without re-adding user-hidden columns
+     if (!columnsInitialized) {
+       const saved = localStorage.getItem('ledger-ui-visible-keys');
+       visibleKeys = saved ? JSON.parse(saved) : [...allKeys];
+       columnsInitialized = true;
+     } else {
+       // Remove keys no longer present in the dataset
+       visibleKeys = visibleKeys.filter(k => allKeys.includes(k));
+       // Auto-add only brand-new keys that were not seen before
+       allKeys.forEach(k => {
+         if (!visibleKeys.includes(k) && !previousAllKeys.includes(k)) {
+           visibleKeys.push(k);
+         }
+       });
+     }
+
+     renderColumnSelector();
+
+    // Apply TransactionType filter
+    let rows = data;
+    if (selectedTransactionType) {
+      rows = rows.filter(tx => tx.TransactionType === selectedTransactionType);
+    }
+    // Apply filter (Hide DeliverMax >= 1 XRP)
+    if (filterDeliverMax) {
+      rows = rows.filter(tx => {
+        const dm = tx['DeliverMax'];
+        if (dm === undefined) return true;
+        return parseAmountToXRP(dm) > 1;
+      });
+    }
+     
+     // Build table
+     let html = '<table><thead><tr>';
+     visibleKeys.forEach(k => {
+       if (k && typeof k === 'string' && k.toLowerCase().includes('memo')) {
+         const decoded = memoDecodeColumns.has(k);
+         const safeKey = k.replace(/"/g, '&quot;');
+         html += `<th>${k}
+           <div class="memo-col-actions">
+             <button type="button" class="icon-btn btn-decode memo-col-decode-btn" data-col-key="${safeKey}" title="${decoded ? 'Show original hex' : 'Decode all memos'}">${iconDecodeSVG(decoded)}</button>
+             <button type="button" class="icon-btn btn-copy-hex memo-col-copy-hex" data-col-key="${safeKey}" title="Copy all hex">${iconCopySVG()}</button>
+             <button type="button" class="icon-btn btn-copy-text memo-col-copy-text" data-col-key="${safeKey}" title="Copy all decoded text">${iconDocTextSVG()}</button>
+           </div>
+         </th>`;
+       } else {
+         html += `<th>${k}</th>`;
+       }
+     });
+     html += '</tr></thead><tbody>';
+     let totalDeliveredAmount = 0;
+     let hasDeliveredAmount = false;
+     rows.forEach(tx => {
+       html += '<tr>';
+     visibleKeys.forEach(k => {
+         let val = tx[k];
+         // For Account, Destination, Issuer: show name if enabled, else address
+         if ((k === 'Account' || k === 'Destination' || k === 'Issuer') && val && typeof val === 'string' && val.startsWith('r')) {
+           let displayVal = val;
+           if (showNames && addressBookMap[val]) {
+             displayVal = addressBookMap[val];
+           }
+           val = `<a href="?address=${val}" target="_blank">${displayVal}</a>`;
+         } else if (k && typeof k === 'string' && k.toLowerCase().includes('memo')) {
+       // Memo/Memos column: render based on header-level decode toggle
+       const decoded = memoDecodeColumns.has(k);
+       val = renderMemoCell(val, decoded);
+         } else if (k === 'delivered_amount' && typeof val === 'string' && !isNaN(val)) {
+           const xrpAmount = parseFloat(val) / 1000000;
+           totalDeliveredAmount += xrpAmount;
+           hasDeliveredAmount = true;
+           val = xrpAmount.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+         } else if (typeof val === 'object' && val !== null) {
+           val = `<pre style="white-space:pre-wrap;max-width:400px;overflow-x:auto;word-break:break-all;">${JSON.stringify(val, null, 2)}</pre>`;
+         }
+         html += `<td><div class="cell-content">${val === undefined ? '' : val}</div></td>`;
+       });
+       html += '</tr>';
+     });
+     html += '</tbody></table>';
+  tableWrap.innerHTML = html;
+     tableWrap.style.display = 'block';
+     // Show total when any delivered_amount values were found in the rows
+     if (hasDeliveredAmount) {
+       totalAmountDiv.textContent = `Total Delivered XRP: ${totalDeliveredAmount.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 })}`;
+       totalAmountDiv.style.display = 'block';
+     } else {
+       totalAmountDiv.style.display = 'none';
+     }
+     // Defer to next frame so layout is finalized before attaching resizers
+  // requestAnimationFrame(() => {
+  //   const tbl = document.querySelector('table');
+  //   if (tbl) {
+  //     resizableGrid(tbl);
+  //     attachAutoSizeHandlers(tbl);
+  //   }
+  // });
+     // Remember keys for next render (to detect brand-new columns)
+     previousAllKeys = [...allKeys];
+  }
+
+  // Render Memo/Memos cell with a Decode option (hex -> text)
+  function renderMemoCell(value, decoded) {
+    try {
+      const items = extractMemoItems(value);
+
+      if (!items.length) {
+        // Fallback to JSON if not recognized
+        return `<pre style="white-space:pre-wrap;max-width:400px;overflow-x:auto;word-break:break-all;">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
+      }
+
+      if (!decoded) {
+        // Original hex view only
+        const hexBlocks = items.map(m => `<div class="memo-hex"><pre>${escapeHtml(m.hex || '')}</pre></div>`).join('');
+        return `<div class="memos-wrap">${hexBlocks}</div>`;
+      } else {
+        // Decoded text view
+        const textBlocks = items.map(m => `<div class="memo-text"><pre>${escapeHtml(decodeHexToUtf8Safe(m.hex || ''))}</pre></div>`).join('');
+        return `<div class="memos-wrap">${textBlocks}</div>`;
+      }
+    } catch (e) {
+      // As a last resort, stringify
+      return `<pre style="white-space:pre-wrap;max-width:400px;overflow-x:auto;word-break:break-all;">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
+    }
+  }
+
+  // Normalize to array of memo items from varying XRPL shapes
+  function extractMemoItems(value) {
+    const items = [];
+    try {
+      if (Array.isArray(value)) {
+        value.forEach(entry => {
+          if (entry && entry.Memo && (entry.Memo.MemoData || entry.Memo.memoData)) {
+            items.push({
+              hex: String(entry.Memo.MemoData || entry.Memo.memoData),
+              type: entry.Memo.MemoType || entry.Memo.memoType || '',
+              format: entry.Memo.MemoFormat || entry.Memo.memoFormat || ''
+            });
+          } else if (entry && (entry.MemoData || entry.memoData)) {
+            items.push({ hex: String(entry.MemoData || entry.memoData), type: entry.MemoType || '', format: entry.MemoFormat || '' });
+          }
+        });
+      } else if (value && typeof value === 'object') {
+        if (value.Memo && (value.Memo.MemoData || value.Memo.memoData)) {
+          items.push({
+            hex: String(value.Memo.MemoData || value.Memo.memoData),
+            type: value.Memo.MemoType || value.Memo.memoType || '',
+            format: value.Memo.MemoFormat || value.Memo.memoFormat || ''
+          }); 
+        } else if (value.MemoData || value.memoData) {
+          items.push({ hex: String(value.MemoData || value.memoData), type: value.MemoType || '', format: value.MemoFormat || '' });
+        }
+      } else if (typeof value === 'string') {
+        items.push({ hex: value, type: '', format: '' });
+      }
+    } catch {}
+    return items;
+  }
+
+  // Event delegation for memo column header actions
+  if (tableWrap) {
+    tableWrap.addEventListener('click', async (e) => {
+      const decodeColBtn = e.target.closest?.('.memo-col-decode-btn');
+      const copyColHexBtn = e.target.closest?.('.memo-col-copy-hex');
+      const copyColTextBtn = e.target.closest?.('.memo-col-copy-text');
+      if (decodeColBtn) {
+        const key = decodeColBtn.getAttribute('data-col-key');
+        if (!key) return;
+        if (memoDecodeColumns.has(key)) memoDecodeColumns.delete(key); else memoDecodeColumns.add(key);
+        // Re-render table to apply decode toggle
+        renderTable(lastData);
+        return;
+      }
+      if (copyColHexBtn || copyColTextBtn) {
+        const key = (copyColHexBtn || copyColTextBtn).getAttribute('data-col-key');
+        if (!key) return;
+        const decoded = !!copyColTextBtn; // decode for text copy
+        // Build the same filtered rows as the table shows
+        const rows = filterDeliverMax
+          ? lastData.filter(tx => {
+              const dm = tx['DeliverMax'];
+              if (dm === undefined) return true;
+              return parseAmountToXRP(dm) > 1;
+            })
+          : lastData;
+        const lines = [];
+        for (const tx of rows) {
+          const items = extractMemoItems(tx[key]);
+          if (!items.length) continue;
+          for (const it of items) {
+            lines.push(decoded ? decodeHexToUtf8Safe(it.hex || '') : (it.hex || ''));
+          }
+        }
+        try { await navigator.clipboard.writeText(lines.join('\n')); } catch {}
+        return;
+      }
+    });
+  }
+
+  // Helpers for safe hex decoding
+  function decodeHexToUtf8Safe(hex) {
+    try {
+      const bytes = hexToBytes(hex);
+      try {
+        const td = new TextDecoder('utf-8', { fatal: false });
+        return td.decode(bytes);
+      } catch {
+        // Fallback: ASCII map
+        return Array.from(bytes).map(b => (b >= 32 && b <= 126) || b === 9 || b === 10 || b === 13 ? String.fromCharCode(b) : '\uFFFD').join('');
+      }
+    } catch {
+      return '(invalid hex)';
+    }
+  }
+
+  function hexToBytes(hex) {
+    if (!hex) return new Uint8Array();
+    let s = String(hex).trim();
+    if (s.startsWith('0x') || s.startsWith('0X')) s = s.slice(2);
+    // Remove non-hex characters defensively
+    s = s.replace(/[^0-9a-fA-F]/g, '');
+    if (s.length % 2 === 1) s = '0' + s; // pad if odd
+    const len = s.length / 2;
+    const out = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      out[i] = parseInt(s.substr(i * 2, 2), 16);
+    }
+    return out;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // Attach double-click auto-size on column headers
+  function attachAutoSizeHandlers(table) {
+    const headers = table.querySelectorAll('thead th');
+    headers.forEach((th, idx) => {
+      th.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        autoSizeColumnToContent(table, idx);
+      });
+    });
+  }
+
+  // Efficiently compute and set the width needed to fit the widest content in the column
+  function autoSizeColumnToContent(table, colIndex) {
+    if (!table || colIndex == null) return;
+    const theadTh = table.tHead?.rows?.[0]?.cells?.[colIndex];
+    const tbody = table.tBodies?.[0];
+    if (!tbody) return;
+
+    // Measure header first
+    let maxWidth = measureCellWidth(theadTh) + 16; // small padding
+
+    // For performance with thousands of rows, sample up to 1000 rows
+    const rows = Array.from(tbody.rows);
+    const sampleCount = Math.min(1000, rows.length);
+    for (let i = 0; i < sampleCount; i++) {
+      const td = rows[i].cells[colIndex];
+      if (!td) continue;
+      const w = measureCellWidth(td);
+      if (w > maxWidth) maxWidth = w;
+    }
+
+    // Clamp to a sensible max to avoid exploding layout
+    const finalWidth = Math.min(Math.max(60, Math.ceil(maxWidth) + 8), 1200);
+
+    // Apply width to header and cells in this column
+    if (theadTh) theadTh.style.width = finalWidth + 'px';
+    rows.forEach(r => {
+      const c = r.cells[colIndex];
+      if (c) c.style.width = finalWidth + 'px';
+    });
+  }
+
+  // Measure content width of a table cell reasonably without heavy DOM churn
+  function measureCellWidth(cell) {
+    if (!cell) return 0;
+    // Prefer measuring inner content if present
+    const pre = cell.querySelector('pre');
+    const content = cell.querySelector('.cell-content');
+    const target = pre || content || cell;
+
+    // Use scrollWidth as a cheap approximation, fall back to bounding box
+    let w = target.scrollWidth || 0;
+    if (!w) w = target.getBoundingClientRect().width;
+
+    // Add horizontal paddings of the cell if we're measuring a child
+    if (target !== cell) {
+      const cs = getComputedStyle(cell);
+      const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      w += pad;
+    }
+    return w;
+  }
+
+  function renderColumnSelector() {
+    if (!allKeys.length) {
+      columnSelectorWrap.style.display = 'none';
+      return;
+    }
+    let html = '<div style="background:#e8eaf6;padding:10px 16px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.04);display:flex;flex-wrap:wrap;gap:12px;align-items:center;">';
+    html += '<span style="font-weight:700;color:#2a3b8f;margin-right:12px;">Columns:</span>';
+    allKeys.forEach(k => {
+      html += `<label style="margin-right:10px;white-space:nowrap;"><input type="checkbox" class="col-toggle" value="${k}"${visibleKeys.includes(k) ? ' checked' : ''}/> ${k}</label>`;
+    });
+    html += '<button id="saveCols" style="margin-left:16px;background:#2a3b8f;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-weight:700;cursor:pointer;">Save Layout</button>';
+    html += '<button id="resetCols" style="margin-left:8px;background:#cfd8dc;color:#222;border:none;border-radius:6px;padding:6px 16px;font-weight:700;cursor:pointer;">Reset</button>';
+    html += '</div>';
+    columnSelectorWrap.innerHTML = html;
+    columnSelectorWrap.style.display = 'block';
+
+    // Add event listeners
+    columnSelectorWrap.querySelectorAll('.col-toggle').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const col = e.target.value;
+        if (e.target.checked) {
+          if (!visibleKeys.includes(col)) visibleKeys.push(col);
+        } else {
+          visibleKeys = visibleKeys.filter(k => k !== col);
+        }
+        renderTable(lastData);
+      });
+    });
+    document.getElementById('saveCols').onclick = () => {
+      localStorage.setItem('ledger-ui-visible-keys', JSON.stringify(visibleKeys));
+      alert('Column layout saved!');
+    };
+    document.getElementById('resetCols').onclick = () => {
+      visibleKeys = [...allKeys];
+      localStorage.removeItem('ledger-ui-visible-keys');
+      renderTable(lastData);
+    };
+  }
+
+  // Address dropdown (combo box) logic
+  const addressInput = document.getElementById('address');
+  const addressDropdown = document.getElementById('addressDropdown');
+
+  function updateAddressDropdown() {
+    if (!addressDropdown) return;
+    const val = (addressInput.value || '').trim().toLowerCase();
+    if (!Array.isArray(addressBook) || addressBook.length === 0) {
+      addressDropdown.style.display = 'none';
+      return;
+    }
+    const filtered = addressBook.filter(entry =>
+      (entry.name || '').toLowerCase().includes(val) || (entry.address || '').toLowerCase().includes(val)
+    );
+    if (!filtered.length && val.length === 0) {
+      addressDropdown.style.display = 'none';
+      return;
+    }
+    let html = '';
+    filtered.forEach(entry => {
+      const addr = (entry.address || '').replace(/"/g, '&quot;');
+      const nm = entry.name || '';
+      html += `<div class="dropdown-item" data-address="${addr}" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #eef1f4;">
+        <div style="font-weight:700;color:#2a3b8f;">${nm}</div>
+        <div style="font-size:0.92em;color:#555;">${addr}</div>
+      </div>`;
+    });
+    addressDropdown.innerHTML = html || '<div style="padding:8px 10px;color:#777;">No matches</div>';
+    addressDropdown.style.display = 'block';
+    addressDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const chosen = item.getAttribute('data-address');
+        if (chosen) addressInput.value = chosen;
+        addressDropdown.style.display = 'none';
+      });
+    });
+  }
+
+  if (addressInput) {
+    addressInput.addEventListener('input', updateAddressDropdown);
+    addressInput.addEventListener('focus', () => { loadAddressBook(); });
+    addressInput.addEventListener('click', () => { loadAddressBook(); });
+    addressInput.addEventListener('blur', () => setTimeout(() => { if (addressDropdown) addressDropdown.style.display = 'none'; }, 120));
+  }
+
+  // =====================
+  // Graph crawl & JSON
+  // =====================
+  async function fetchTransactionsFor(address, limit) {
+    try {
+      const res = await fetch(`/api/ledger/transactions/${address}?limit=${limit}`);
+      if (!res.ok) throw new Error('Failed to fetch transactions');
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      console.warn('Fetch transactions failed for', address, e);
+      return [];
+    }
+  }
+
+  function getDisplayName(addr) {
+    if (showNames && addressBookMap[addr]) return addressBookMap[addr];
+    return addr;
+  }
+
+  function renderGraphJson(graph) {
+    // Map labels based on toggle dynamically without changing ids
+    const labeled = {
+      ...graph,
+      nodes: graph.nodes.map(n => ({
+        ...n,
+        name: getDisplayName(n.address || n.id),
+      }))
+    };
+    graphJsonPre.textContent = JSON.stringify(labeled, null, 2);
+    graphSection.style.display = 'block';
+  }
+
+  async function buildGraphFromAddress(startAddress, depth, limit, minAmountXRP = 0) {
+    const visited = new Set();
+    const nodeMap = new Map();
+    const edgeMap = new Map();
+  // De-duplicate transactions across BFS levels/sides to avoid double counting
+  const seenTx = new Set();
+
+    function ensureNode(addr, level) {
+      const existing = nodeMap.get(addr);
+      if (existing) {
+        if (typeof level === 'number') existing.depth = Math.min(existing.depth, level);
+        return existing;
+      }
+      const node = {
+        id: addr,
+        address: addr,
+        name: getDisplayName(addr),
+        depth: typeof level === 'number' ? level : 0,
+        category: addr === startAddress ? 'root' : 'account',
+        sent: 0,
+        received: 0,
+        value: 0
+      };
+      nodeMap.set(addr, node);
+      return node;
+    }
+
+    function addEdge(src, dst, amount) {
+      const key = `${src}->${dst}`;
+      let edge = edgeMap.get(key);
+      if (!edge) {
+        edge = { source: src, target: dst, amount: 0, txCount: 0 };
+        edgeMap.set(key, edge);
+      }
+      edge.txCount += 1;
+      if (!isNaN(amount) && amount > 0) edge.amount += amount;
+    }
+
+    // BFS by depth, fetch each level in parallel
+    let currentLevel = new Set([startAddress]);
+    ensureNode(startAddress, 0);
+    visited.add(startAddress);
+
+    for (let level = 0; level < depth; level++) {
+      const levelAddresses = Array.from(currentLevel);
+      if (!levelAddresses.length) break;
+
+      // Fetch all transactions for this level in parallel
+      const results = await Promise.all(
+        levelAddresses.map(addr => fetchTransactionsFor(addr, limit))
+      );
+
+      const nextLevel = new Set();
+
+      for (let i = 0; i < levelAddresses.length; i++) {
+        const addr = levelAddresses[i];
+        const txs = results[i] || [];
+
+  for (const tx of txs) {
+          // Optional quick filter by toggle (<= 1 XRP DeliverMax)
+          if (filterDeliverMax) {
+            const dm = tx['DeliverMax'];
+            if (dm !== undefined && parseAmountToXRP(dm) <= 1) continue;
+          }
+
+          const account = tx.Account;
+          const destination = tx.Destination;
+          const amountXRP = (() => {
+            if (tx.delivered_amount !== undefined) return parseAmountToXRP(tx.delivered_amount);
+            if (tx.Amount !== undefined) return parseAmountToXRP(tx.Amount);
+            if (tx.SendMax !== undefined) return parseAmountToXRP(tx.SendMax);
+            if (tx.DeliverMax !== undefined) return parseAmountToXRP(tx.DeliverMax);
+            return 0;
+          })();
+
+          // New: threshold check (prefer DeliverMax when present)
+          const deliverMaxXRP = tx.DeliverMax !== undefined ? parseAmountToXRP(tx.DeliverMax) : undefined;
+          const thresholdBasis = (deliverMaxXRP !== undefined) ? deliverMaxXRP : amountXRP;
+          if (minAmountXRP > 0 && (thresholdBasis || 0) <= minAmountXRP) {
+            continue;
+          }
+
+          if (account && destination) {
+            // Determine which side is current node to set levels consistently
+            if (addr === account) {
+              const src = account;
+              const dst = destination;
+              // Deduplicate this transaction+edge once globally
+              const txHash = tx.hash ?? tx.Hash ?? tx.transaction_hash ?? (tx.tx && tx.tx.hash);
+              const dedupeKey = txHash
+                ? `tx:${txHash}`
+                : `edge:${src}->${dst}|l:${tx.ledger_index ?? tx.LedgerIndex ?? ''}|sq:${tx.Sequence ?? ''}|t:${tx.date ?? ''}|am:${amountXRP}`;
+              if (seenTx.has(dedupeKey)) continue;
+              seenTx.add(dedupeKey);
+              const srcNode = ensureNode(src, level);
+              const dstNode = ensureNode(dst, level + 1);
+              addEdge(src, dst, amountXRP);
+              srcNode.sent += amountXRP;
+              dstNode.received += amountXRP;
+              srcNode.value = srcNode.sent + srcNode.received;
+              dstNode.value = dstNode.sent + dstNode.received;
+              if (!visited.has(dst)) nextLevel.add(dst);
+            } else if (addr === destination) {
+              const src = account;
+              const dst = destination;
+              // Deduplicate this transaction+edge once globally
+              const txHash = tx.hash ?? tx.Hash ?? tx.transaction_hash ?? (tx.tx && tx.tx.hash);
+              const dedupeKey = txHash
+                ? `tx:${txHash}`
+                : `edge:${src}->${dst}|l:${tx.ledger_index ?? tx.LedgerIndex ?? ''}|sq:${tx.Sequence ?? ''}|t:${tx.date ?? ''}|am:${amountXRP}`;
+              if (seenTx.has(dedupeKey)) continue;
+              seenTx.add(dedupeKey);
+              const dstNode = ensureNode(dst, level);
+              const srcNode = ensureNode(src, level + 1);
+              addEdge(src, dst, amountXRP);
+              srcNode.sent += amountXRP;
+              dstNode.received += amountXRP;
+              srcNode.value = srcNode.sent + srcNode.received;
+              dstNode.value = dstNode.sent + dstNode.received;
+              if (!visited.has(src)) nextLevel.add(src);
+            } else {
+              // Fallback: ensure nodes exist, add edge
+              ensureNode(account);
+              ensureNode(destination);
+              // Deduplicate this transaction+edge once globally
+              const txHash = tx.hash ?? tx.Hash ?? tx.transaction_hash ?? (tx.tx && tx.tx.hash);
+              const dedupeKey = txHash
+                ? `tx:${txHash}`
+                : `edge:${account}->${destination}|l:${tx.ledger_index ?? tx.LedgerIndex ?? ''}|sq:${tx.Sequence ?? ''}|t:${tx.date ?? ''}|am:${amountXRP}`;
+              if (seenTx.has(dedupeKey)) continue;
+              seenTx.add(dedupeKey);
+              addEdge(account, destination, amountXRP);
+            }
+          } else if (account && tx.Issuer) {
+            // Optional: relationships to issuers (trustlines, issued payments) — XRP-only filter keeps this mostly 0
+            const other = tx.Issuer;
+            ensureNode(account, level);
+            ensureNode(other, level + 1);
+            addEdge(account, other, 0);
+            if (!visited.has(other)) nextLevel.add(other);
+          }
+        }
+      }
+
+      // Prepare for next level
+      currentLevel = new Set();
+      for (const n of nextLevel) {
+        if (!visited.has(n)) {
+          visited.add(n);
+          currentLevel.add(n);
+        }
+      }
+    }
+
+    const nodes = Array.from(nodeMap.values());
+    const links = Array.from(edgeMap.values());
+
+    return {
+      meta: {
+        root: startAddress,
+        depth,
+        limit,
+        minAmountXRP,
+        generatedAt: new Date().toISOString(),
+        nodeCount: nodes.length,
+        linkCount: links.length
+      },
+      nodes,
+      links
+    };
+  }
+
+  async function onBuildGraphClicked() {
+    errorDiv.textContent = '';
+    const start = document.getElementById('address').value.trim();
+    const limit = Number(document.getElementById('limit').value) || 50;
+    const depth = Math.max(1, Math.min(6, Number(depthInput?.value || 2)));
+    const minAmount = Math.max(0, Number(minAmountInput?.value || 0));
+    if (!start) {
+      errorDiv.textContent = 'Please enter a valid XRP address.';
+      return;
+    }
+    loadingDiv.style.display = 'block';
+    graphSection.style.display = 'none';
+    try {
+      await loadAddressBook();
+      const graph = await buildGraphFromAddress(start, depth, limit, minAmount);
+      currentGraphData = graph;
+      renderGraphJson(graph);
+    } catch (e) {
+      console.error(e);
+      errorDiv.textContent = e.message || 'Failed to build graph.';
+    } finally {
+      loadingDiv.style.display = 'none';
+    }
+  }
+
+  if (buildGraphBtn) buildGraphBtn.addEventListener('click', onBuildGraphClicked);
+  if (copyGraphJsonBtn) {
+    copyGraphJsonBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(graphJsonPre.textContent || '');
+        alert('Graph JSON copied to clipboard');
+      } catch (e) {
+        alert('Failed to copy');
+      }
+    });
+  }
+  if (downloadGraphJsonBtn) {
+    downloadGraphJsonBtn.addEventListener('click', () => {
+      const blob = new Blob([graphJsonPre.textContent || ''], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ledger-graph.json';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 0);
+    });
+  }
+  if (openGraphViewerBtn) {
+    openGraphViewerBtn.addEventListener('click', () => {
+      if (!currentGraphData) {
+        alert('Build Graph JSON first.');
+        return;
+      }
+      // Open the popup viewer
+      const popup = window.open('/ledger-ui/graph-view.html', '_blank', 'width=1100,height=800');
+      if (!popup) {
+        alert('Popup blocked. Please allow popups for this site.');
+        return;
+      }
+      // Handshake: wait for viewer to be ready, then send data
+      const onMsg = (evt) => {
+        if (evt.source === popup && evt.data && evt.data.type === 'graph-view-ready') {
+          popup.postMessage({ type: 'ledger-graph-data', payload: currentGraphData }, '*');
+          window.removeEventListener('message', onMsg);
+        }
+      };
+      window.addEventListener('message', onMsg);
+      // Fallback send after a short delay in case ready message is missed
+      setTimeout(() => {
+        try { popup.postMessage({ type: 'ledger-graph-data', payload: currentGraphData }, '*'); } catch {}
+      }, 1500);
+    });
+  }
+  // --- SVG icon helpers for header buttons ---
+  function iconDecodeSVG(active) {
+    // Use different path hint when active (two arrows swapped) purely visual
+    return `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 7h7l-2-2m2 2l-2 2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M17 17H10l2 2m-2-2l2-2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      ${active ? '<circle cx="12" cy="12" r="9" stroke-width="1.2" />' : ''}
+    </svg>`;
+  }
+  function iconCopySVG() {
+    return `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="9" y="9" width="10" height="10" rx="2" stroke-width="1.8"/>
+      <rect x="5" y="5" width="10" height="10" rx="2" stroke-width="1.2"/>
+    </svg>`;
+  }
+  function iconDocTextSVG() {
+    return `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 3h7l4 4v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z" stroke-width="1.8"/>
+      <path d="M14 3v4h4" stroke-width="1.2"/>
+      <path d="M8 12h8M8 16h8" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>`;
+  }
+  </script>
+</body>
+</html>

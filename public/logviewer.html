@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🚦 Plugin Log File Viewer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace; background: #181e23; color: #e7e7e7; margin: 0; }
+    header { background: #23282d; padding: 1rem; display: flex; align-items: center; justify-content: space-between; }
+    h1 { font-size: 1.2rem; margin: 0; }
+    .filelist { margin-right: 1em; }
+    .toolbar { display: flex; gap: .5em; align-items: center; }
+    input[type="text"] { background: #23282d; color: #fff; border: 1px solid #313640; border-radius: 3px; padding: 0.3em 0.7em; }
+    button { background: #282c34; color: #fff; border: none; border-radius: 3px; padding: 0.3em 0.9em; cursor: pointer; transition: background 0.2s; }
+    button.active, button:hover { background: #66bb6a; color: #222; }
+    #logcontainer { height: 85vh; overflow: auto; background: #111417; border-top: 1px solid #222; font-size: 0.98em; padding: 0.7em 1em; white-space: pre; }
+    .logline { transition: background 0.1s; padding: 2px 0; }
+    .highlight { background: #ffee58; color: #222 !important; border-radius: 3px; }
+    .logline.error { color: #ff3860; font-weight: bold; }
+    .logline.warn  { color: #ffb300; font-weight: bold; }
+    .logline.info  { color: #4fc3f7; }
+    .searchpanel { margin: 0.7em 0; display: flex; align-items: center; gap: 0.4em; }
+    .dark { background: #181e23; color: #e7e7e7; }
+    .light { background: #fff; color: #333; }
+    .light #logcontainer { background: #f5f5f5; color: #232323; }
+    .light input, .light button, .light select { background: #ededed; color: #232323; }
+    .light .highlight { background: #8ecae6; color: #232323; }
+    .json-key   { color: #66bb6a; }
+    .json-str   { color: #4fc3f7; }
+    .json-num   { color: #fbc02d; }
+    .json-bool  { color: #b39ddb; }
+    .json-null  { color: #bdbdbd; }
+    .timestamp  { color: #90caf9; }
+    .pretty-printed { white-space: pre; }
+    select.maxlines { background: #23282d; color: #fff; border: 1px solid #313640; border-radius: 3px; padding: 0.3em 0.7em; }
+    .light select.maxlines { background: #ededed; color: #232323; }
+    .log-table { border-collapse: collapse; margin-top: 5px; font-size: 0.9em; }
+    .log-table th, .log-table td { border: 1px solid #313640; padding: 4px 8px; text-align: left; }
+    .log-table th { background: #23282d; }
+    .light .log-table th, .light .log-table td { border-color: #ccc; }
+    .light .log-table th { background: #e0e0e0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚦 Plugin Log File Viewer</h1>
+    <div class="toolbar">
+      <select id="filelist" class="filelist"></select>
+      <label for="maxlines">Lines:</label>
+      <select id="maxlines" class="maxlines">
+        <option value="100">100</option>
+        <option value="500">500</option>
+        <option value="1000">1,000</option>
+        <option value="5000">5,000</option>
+        <option value="10000">10,000</option>
+      </select>
+      <button id="startstop">▶️ Start</button>
+      <button id="jumpend" title="Jump to latest">↓ End</button>
+      <button id="download">⏬ Download</button>
+      <button id="toggleTheme">🌗 Theme</button>
+    </div>
+  </header>
+  <div class="searchpanel">
+    <label for="search">🔍</label>
+    <input id="search" type="text" placeholder="Search log (auto-highlight, regex OK)" autocomplete="off" />
+    <span id="searchstatus"></span>
+  </div>
+  <div id="logcontainer"></div>
+  <script>
+    const filelist = document.getElementById('filelist');
+    const logcontainer = document.getElementById('logcontainer');
+    const searchInput = document.getElementById('search');
+    const searchStatus = document.getElementById('searchstatus');
+    const startstop = document.getElementById('startstop');
+    const jumpend = document.getElementById('jumpend');
+    const download = document.getElementById('download');
+    const toggleTheme = document.getElementById('toggleTheme');
+    const maxlinesSelect = document.getElementById('maxlines');
+    let maxLines = parseInt(maxlinesSelect.value, 10) || 100;
+    let currentFile = null, polling = false, pollTimer = null, lastSize = 0, lines = [];
+    let atEnd = true;
+
+    // Theme
+    function setTheme(dark) {
+      document.body.className = dark ? 'dark' : 'light';
+      localStorage.setItem('logviewer-theme', dark ? 'dark' : 'light');
+    }
+    setTheme(localStorage.getItem('logviewer-theme') !== 'light');
+    toggleTheme.onclick = () => setTheme(document.body.className !== 'dark');
+
+    // File browser
+    async function loadFileList() {
+      let res = await fetch('/logs?list=1');
+      let files = await res.json();
+      filelist.innerHTML = '';
+      files.forEach(f => {
+        let opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f;
+        filelist.appendChild(opt);
+      });
+      if (!currentFile && files.length) selectFile(files[0]);
+    }
+
+    function selectFile(file) {
+      if (file !== currentFile) {
+        currentFile = file;
+        resetLogLines();
+        fetchInitialLines();
+      }
+    }
+
+    filelist.onchange = e => selectFile(e.target.value);
+
+    // Max lines selector logic
+    maxlinesSelect.onchange = () => {
+      maxLines = parseInt(maxlinesSelect.value, 10) || 100;
+      resetLogLines();
+      fetchInitialLines();
+    };
+
+    function resetLogLines() {
+      lastSize = 0;
+      lines = [];
+      updateLogDisplay(true);
+      stopPolling();
+    }
+
+    function fetchInitialLines() {
+      if (!currentFile) return;
+      fetch(`/logs?file=${encodeURIComponent(currentFile)}&tail=1&lines=${maxLines}`)
+        .then(res => res.json())
+        .then(({ data, size }) => {
+          lines = data ? data.split('\n') : [];
+          if (lines.length > maxLines) lines = lines.slice(-maxLines);
+          lastSize = size || 0;
+          updateLogDisplay(true);
+          startPolling();
+        });
+    }
+
+    // Poll log file for updates
+    async function pollLog() {
+      if (!polling || !currentFile) return;
+      try {
+        let res = await fetch(`/logs?file=${encodeURIComponent(currentFile)}&start=${lastSize}`);
+        if (!res.ok) return;
+        let {data, size} = await res.json();
+        if (size !== undefined) lastSize = size;
+        if (data && data.length) {
+          let newLines = data.split('\n');
+          if (newLines[newLines.length-1]==="") newLines.pop();
+          lines.push(...newLines);
+          if (lines.length > maxLines) lines = lines.slice(lines.length - maxLines); // keep only maxLines
+          updateLogDisplay(true);
+        }
+      } catch (e) {
+        logcontainer.innerHTML = `<span class="error">Error fetching log: ${e}</span>`;
+        stopPolling();
+      }
+      pollTimer = setTimeout(pollLog, 1000);
+    }
+    function startPolling() {
+      stopPolling();
+      polling = true;
+      startstop.textContent = '⏸ Stop';
+      pollLog();
+    }
+    function stopPolling() {
+      polling = false;
+      startstop.textContent = '▶️ Start';
+      if (pollTimer) clearTimeout(pollTimer);
+    }
+    startstop.onclick = () => polling ? stopPolling() : startPolling();
+
+    // Scroll/jump
+    jumpend.onclick = () => {
+      atEnd = true;
+      logcontainer.scrollTop = logcontainer.scrollHeight;
+    };
+    logcontainer.onscroll = () => {
+      atEnd = Math.abs(logcontainer.scrollTop + logcontainer.clientHeight - logcontainer.scrollHeight) < 16;
+    };
+
+    // Download
+    download.onclick = () => {
+      if (!currentFile) return;
+      window.open(`/logs?file=${encodeURIComponent(currentFile)}&download=1`, '_blank');
+    };
+
+    // Search/highlight
+    searchInput.oninput = () => updateLogDisplay();
+
+    function escapeHtml(s) {
+      return s.replace(/[<>&"']/g, c => (
+        {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]
+      ));
+    }
+
+    function highlightLine(line, regex) {
+      if (!regex) return escapeHtml(line);
+      let parts = [], lastIndex = 0, match;
+      while ((match = regex.exec(line)) !== null) {
+        parts.push(escapeHtml(line.slice(lastIndex, match.index)));
+        parts.push(`<span class="highlight">${escapeHtml(match[0])}</span>`);
+        lastIndex = regex.lastIndex;
+        if (!regex.global) break;
+      }
+      parts.push(escapeHtml(line.slice(lastIndex)));
+      return parts.join('');
+    }
+
+    function classForLevel(level) {
+      if (!level) return 'logline';
+      level = level.toLowerCase();
+      if (level === 'error') return 'logline error';
+      if (level === 'warn' || level === 'warning') return 'logline warn';
+      if (level === 'info') return 'logline info';
+      return 'logline';
+    }
+
+    function prettyJson(obj) {
+      let json = JSON.stringify(obj, null, 2);
+      json = json.replace(/^( *)"([^"]+)":/gm, '$1<span class="json-key">"$2"</span>:');
+      json = json.replace(/: "([^"]*)"/g, ': <span class="json-str">"$1"</span>');
+      json = json.replace(/: (\d+(\.\d+)?)/g, ': <span class="json-num">$1</span>');
+      json = json.replace(/: (true|false)/g, ': <span class="json-bool">$1</span>');
+      json = json.replace(/: null/g, ': <span class="json-null">null</span>');
+      return json;
+    }
+
+    function jsonToTable(data) {
+      if (!Array.isArray(data) || data.length === 0) return null;
+      const headers = Array.from(data.reduce((acc, row) => {
+        Object.keys(row).forEach(key => acc.add(key));
+        return acc;
+      }, new Set()));
+
+      let table = '<table class="log-table"><thead><tr>';
+      headers.forEach(h => table += `<th>${escapeHtml(h)}</th>`);
+      table += '</tr></thead><tbody>';
+
+      data.forEach(row => {
+        table += '<tr>';
+        headers.forEach(h => {
+          let val = row[h];
+          if (typeof val === 'object' && val !== null) val = JSON.stringify(val);
+          table += `<td>${escapeHtml(String(val === undefined ? '' : val))}</td>`;
+        });
+        table += '</tr>';
+      });
+
+      table += '</tbody></table>';
+      return table;
+    }
+
+    function updateLogDisplay(scrollToEnd = false) {
+      let query = searchInput.value;
+      let regex = null;
+      let matchCount = 0;
+      if (query) {
+        try {
+          regex = new RegExp(query, 'gi');
+        } catch (e) { regex = null; }
+      }
+      let html = '';
+      lines.forEach((line, idx) => {
+        if (!line.trim()) return;
+        let parsed;
+        try { parsed = JSON.parse(line); } catch { parsed = null; }
+        let level, msg;
+        if (parsed && parsed.level && parsed.message) {
+          level = parsed.level;
+          msg = parsed.message;
+          if (typeof msg === 'string' && msg.startsWith('{') && msg.endsWith('}')) {
+            try { msg = JSON.parse(msg); } catch {}
+          }
+          let pretty = typeof msg === 'object'
+            ? prettyJson(msg)
+            : escapeHtml(String(msg));
+          let timestamp = parsed.timestamp ? `<span class="timestamp">${escapeHtml(parsed.timestamp)}</span>` : '';
+          let head = timestamp + (level ? ` <b>${level.toUpperCase()}</b>:` : '');
+          if (regex && regex.test(line)) matchCount++;
+          html += `<div class="${classForLevel(level)}" data-line="${escapeHtml(line)}">${head}\n${pretty}</div>`;
+        } else {
+          let rendered = regex ? highlightLine(line, regex) : escapeHtml(line);
+          if (regex && regex.test(line)) matchCount++;
+          html += `<div class="logline" data-line="${escapeHtml(line)}">${rendered}</div>`;
+        }
+      });
+      logcontainer.innerHTML = html || `<div style="color:#888">No log data loaded yet.</div>`;
+      searchStatus.textContent = query ? `${matchCount} matches` : '';
+      if (atEnd || scrollToEnd) logcontainer.scrollTop = logcontainer.scrollHeight;
+    }
+
+    logcontainer.onclick = e => {
+      let target = e.target.closest('.logline');
+      if (!target) return;
+
+      if (target.classList.contains('pretty-printed')) {
+        let originalLine = target.getAttribute('data-line');
+        let query = searchInput.value;
+        let regex = null;
+        if (query) { try { regex = new RegExp(query, 'gi'); } catch (e) { regex = null; } }
+        
+        let parsed;
+        try { parsed = JSON.parse(originalLine); } catch {}
+
+        if (parsed && parsed.level && parsed.message) {
+            let level = parsed.level;
+            let msg = parsed.message;
+            if (typeof msg === 'string' && msg.startsWith('{') && msg.endsWith('}')) {
+                try { msg = JSON.parse(msg); } catch {}
+            }
+            let pretty = typeof msg === 'object' ? prettyJson(msg) : escapeHtml(String(msg));
+            let timestamp = parsed.timestamp ? `<span class="timestamp">${escapeHtml(parsed.timestamp)}</span>` : '';
+            let head = timestamp + (level ? ` <b>${level.toUpperCase()}</b>:` : '');
+            target.innerHTML = `${head}\n${pretty}`;
+        } else {
+            target.innerHTML = highlightLine(originalLine, regex);
+        }
+        target.classList.remove('pretty-printed');
+        return;
+      }
+
+      let line = target.getAttribute('data-line');
+      let jsonStart = line.indexOf('{');
+      let jsonEnd = line.lastIndexOf('}');
+      if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) return;
+
+      let jsonStr = line.substring(jsonStart, jsonEnd + 1);
+      try {
+        let obj = JSON.parse(jsonStr);
+        let dataForTable = null;
+
+        // Handle full-line JSON objects with a 'message' that contains stringified JSON
+        if (obj.message && typeof obj.message === 'string') {
+            const msgJsonStart = obj.message.indexOf('{');
+            if (msgJsonStart !== -1) {
+                try {
+                    const msgObj = JSON.parse(obj.message.substring(msgJsonStart));
+                    // Check if it's an object with a single key pointing to an array
+                    const keys = Object.keys(msgObj);
+                    if (keys.length === 1 && Array.isArray(msgObj[keys[0]])) {
+                        dataForTable = msgObj[keys[0]];
+                    }
+                } catch {}
+            }
+        }
+
+        let prefix = escapeHtml(line.substring(0, jsonStart));
+        let content;
+        if (dataForTable) {
+            content = jsonToTable(dataForTable);
+        }
+        
+        if (content) {
+            target.innerHTML = `${prefix}${content}`;
+            target.classList.add('pretty-printed');
+        } else { // Fallback to original pretty print
+            target.innerHTML = `${prefix}<pre class="pretty-printed">${prettyJson(obj)}</pre>`;
+            target.classList.add('pretty-printed');
+        }
+      } catch (err) {
+        // Not valid JSON, do nothing
+      }
+    };
+
+    // Initial load
+    loadFileList();
+    fetchInitialLines();
+    window.onfocus = () => { if (polling) pollLog(); }
+  </script>
+</body>
+</html>
