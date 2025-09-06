@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+  <meta charset="UTF-8">
+  <title>Charts</title>
+  <script>
+    // Set symbol from localStorage or default
+    const symbol = localStorage.getItem('selectedSymbol') || 'ZROUSDT';
+    document.addEventListener('DOMContentLoaded', () => {
+      document.title = `Charts (${symbol})`;
+      // Populate symbol dropdown
+      const SYMBOLS = ['BTCUSDT','ETHUSDT', 'XRPUSDT'];
+      const symbolDropdown = document.createElement('select');
+      symbolDropdown.id = 'symbol-dropdown';
+      symbolDropdown.className = 'toolbar-btn';
+      SYMBOLS.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        if (s === symbol) opt.selected = true;
+        symbolDropdown.appendChild(opt);
+      });
+      const toolbar = document.getElementById('top-toolbar');
+      toolbar.insertBefore(symbolDropdown, toolbar.firstChild);
+      symbolDropdown.addEventListener('change', () => {
+        localStorage.setItem('selectedSymbol', symbolDropdown.value);
+        location.reload();
+      });
+    });
+  </script>
+  <style>
+    html, body { margin: 0; height: 100vh; width: 100vw; font-family: Arial; background: #333; display: grid; grid-template-rows: 50px 1fr; }
+    #top-toolbar { display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg,#fff,#e6e6e6); padding: 10px 15px; border-bottom:2px solid #aaa; gap:10px; }
+    .icon { width:18px; height:18px; vertical-align:middle; }
+    .toolbar-btn { background: linear-gradient(to bottom,#fff,#d9d9d9); border:1px solid #888; padding:5px 10px; font-size:14px; cursor:pointer; border-radius:4px; transition:0.1s; }
+    .toolbar-btn.pressed, .toolbar-btn:active { background:#ccc; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2); transform: translateY(2px); }
+    .toolbar-btn:hover { background:#eee; }
+    .separator { color:#484848; margin:0 10px; }
+  #chart-container { height:calc(100vh - 50px); width:100vw; display:block; padding:0; position:relative; }
+  .chart { width:100vw; height:calc(100vh - 50px); background:#fff; border:1px solid #ccc; border-radius:6px; position:relative; }
+  #annotation-canvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+  </style>
+</head>
+<body>
+  <div id="top-toolbar">
+    <select id="timeframe" class="toolbar-btn">
+      <option value="1m" selected>1m</option>
+      <option value="5m">5m</option>
+      <option value="15m">15m</option>
+      <option value="1h">1h</option>
+      <option value="4h">4h</option>
+    </select>
+    <button id="chart-type" class="toolbar-btn">📈</button>
+    <button id="fullscreen" class="toolbar-btn">⛶</button>
+    <button id="settings" class="toolbar-btn">⚙</button>
+    <button id="toggle-candles" class="toolbar-btn" title="Toggle Candlesticks on COB Chart">🕯️</button>
+    <button id="adaptive-mode" class="toolbar-btn" title="Toggle Adaptive Granularity">🎯</button>
+    <span class="separator">|</span>
+    <button id="annotate" class="toolbar-btn"><img src="./img/pencil-icon.svg" alt="Annotate" class="icon"></button>
+    <button id="erase" class="toolbar-btn"><img src="./img/eraser-icon.svg" alt="Erase" class="icon"></button>
+    <button id="stack-charts" class="toolbar-btn" title="Stack visible charts">🗄️ Stack Charts</button>
+  </div>
+  <div id="chart-container">
+    <div id="pluginChartCOB" class="chart"></div>
+    <canvas id="annotation-canvas"></canvas>
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@4/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-gl@1/dist/echarts-gl.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-stat@1/dist/ecStat.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@4/dist/extension/dataTool.min.js"></script>
+  <script src="../charts/pluginChartCOB.js"></script>
+  <script src="../includes/WebSocketClient.js"></script>
+
+  <script>
+    // --- WebSocket & Chart Init (unchanged) ---
+    document.addEventListener('DOMContentLoaded',()=>{
+      try {
+        window.pluginChartCOB = new PluginChartCOB({
+          containerId: 'pluginChartCOB',
+          symbol,
+          cobWebSocketUrl: `wss://realm.sanixlab.com/wss/`,
+          enableCandlesticks: true,
+			  klineWebSocketUrl: `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_1m`,
+          candlestickOpacity: 0.75,
+          maxVisibleCandles: 1,
+          priceRange: symbol === 'BTCUSDT' ? 0.003 : symbol === 'ETHUSDT' ? 0.010 : symbol === 'XRPUSDT' ? 0.02 : 0.02,
+          pricePrecision: symbol === 'BTCUSDT' ? 0 : symbol === 'ETHUSDT' ? 3 : symbol === 'XRPUSDT' ? 3 : 3,
+          priceGrouping: symbol === 'BTCUSDT' ? 5 : symbol === 'ETHUSDT' ? 0.5 : symbol === 'XRPUSDT' ? 0.0005 : 0.0005,
+          percentageThresholdForLabel: 15,
+          adaptiveGranularity: true,
+          vwapZoneRange: 0.002,
+          distantWallThreshold: 20.0
+        });
+        window.pluginChartCOB.initialize();
+        console.log(`🚀 PluginChartCOB initialized for ${symbol}`);
+      } catch(e){console.error('PluginChartCOB',e)}
+    });
+
+    // --- Draggable & Resizable charts ---
+    interact('.chart').draggable({ inertia:true, modifiers:[interact.modifiers.restrictRect({restriction:'parent',endOnly:true})], listeners:{move(e){
+      const t=e.target, x=(parseFloat(t.getAttribute('data-x'))||0)+e.dx, y=(parseFloat(t.getAttribute('data-y'))||0)+e.dy;
+      t.style.transform=`translate(${x}px,${y}px)`; t.setAttribute('data-x',x); t.setAttribute('data-y',y);
+    }}}).resizable({ edges:{left:true,right:true,top:true,bottom:true}, modifiers:[interact.modifiers.restrictEdges({outer:'parent'}),interact.modifiers.restrictSize({min:{width:100,height:100}})], listeners:{move(e){ const t=e.target; t.style.width=e.rect.width+'px'; t.style.height=e.rect.height+'px'; const x=parseFloat(t.getAttribute('data-x'))||0, y=parseFloat(t.getAttribute('data-y'))||0; t.style.transform=`translate(${x}px,${y}px)`; window[t.id]?.resize(); }} });
+
+    // --- Annotation Tools ---
+    const annotationCanvas=document.getElementById('annotation-canvas'), ctx=annotationCanvas.getContext('2d'), toolbar=document.getElementById('top-toolbar');
+    let annotateMode=false, currentTool='freehand', drawingColor='#ff0000', isDrawing=false, startX=0, startY=0;
+    const shapes=[];
+
+    function resizeAnnotationCanvas(){ annotationCanvas.width=annotationCanvas.parentElement.offsetWidth; annotationCanvas.height=annotationCanvas.parentElement.offsetHeight; if(!annotateMode) ctx.clearRect(0,0,annotationCanvas.width,annotationCanvas.height); }
+    window.addEventListener('load', ()=>{ resizeAnnotationCanvas(); setTimeout(resizeAnnotationCanvas,300); });
+    window.addEventListener('resize', resizeAnnotationCanvas);
+
+    // Color Picker
+    const colorPicker=document.createElement('input'); colorPicker.type='color'; colorPicker.value=drawingColor; colorPicker.className='toolbar-btn'; colorPicker.oninput=e=>drawingColor=e.target.value; toolbar.appendChild(colorPicker);
+
+    // Tool Selector
+    const toolSelector=document.createElement('select'); toolSelector.className='toolbar-btn'; ['freehand','line','rectangle','circle'].forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; toolSelector.append(o); }); toolSelector.onchange=e=>{ if(annotateMode){ isDrawing=false; currentTool=e.target.value; }}; toolbar.appendChild(toolSelector);
+
+    // Annotate Toggle
+    const annotateBtn=document.getElementById('annotate'); annotateBtn.onclick=()=>{ annotateMode=!annotateMode; annotationCanvas.style.pointerEvents=annotateMode?'auto':'none'; annotateBtn.classList.toggle('pressed',annotateMode); if(!annotateMode) redraw(); };
+
+    // Erase
+    document.getElementById('erase').onclick=()=>{ ctx.clearRect(0,0,annotationCanvas.width,annotationCanvas.height); shapes.length=0; };
+
+    // Draw and preview
+    annotationCanvas.addEventListener('mousedown',e=>{ if(!annotateMode||e.button!==0) return; isDrawing=true; startX=e.offsetX; startY=e.offsetY; if(currentTool==='freehand'){ ctx.beginPath(); ctx.moveTo(startX,startY);} });
+    annotationCanvas.addEventListener('mousemove',e=>{ if(!annotateMode||!isDrawing) return; const x=e.offsetX, y=e.offsetY; ctx.clearRect(0,0,annotationCanvas.width,annotationCanvas.height); redraw(); if(currentTool==='freehand'){ ctx.lineTo(x,y); ctx.strokeStyle=drawingColor; ctx.lineWidth=2; ctx.stroke(); } else { ctx.strokeStyle=drawingColor; ctx.lineWidth=2; ctx.beginPath(); if(currentTool==='line'){ ctx.moveTo(startX,startY); ctx.lineTo(x,y); ctx.stroke(); } else if(currentTool==='rectangle'){ ctx.strokeRect(startX,startY,x-startX,y-startY); } else if(currentTool==='circle'){ const r=Math.hypot(x-startX,y-startY); ctx.arc(startX,startY,r,0,2*Math.PI); ctx.stroke(); } } });
+    annotationCanvas.addEventListener('mouseup',e=>{ if(!annotateMode||!isDrawing) return; isDrawing=false; const x=e.offsetX, y=e.offsetY; if(currentTool==='line'){ shapes.push({type:'line',x1:startX,y1:startY,x2:x,y2:y,color:drawingColor}); } else if(currentTool==='rectangle'){ shapes.push({type:'rect',x:startX,y:startY,w:x-startX,h:y-startY,color:drawingColor}); } else if(currentTool==='circle'){ shapes.push({type:'circle',x:startX,y:startY,r:Math.hypot(x-startX,y-startY),color:drawingColor}); } });
+    function redraw(){ ctx.clearRect(0,0,annotationCanvas.width,annotationCanvas.height); shapes.forEach(sh=>{ ctx.strokeStyle=sh.color; ctx.fillStyle=sh.color; if(sh.type==='line'){ ctx.beginPath(); ctx.moveTo(sh.x1,sh.y1); ctx.lineTo(sh.x2,sh.y2); ctx.stroke(); } else if(sh.type==='rect'){ ctx.strokeRect(sh.x,sh.y,sh.w,sh.h); } else if(sh.type==='circle'){ ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,2*Math.PI); ctx.stroke(); } }); }
+  </script>
+</body>
+</html>
+

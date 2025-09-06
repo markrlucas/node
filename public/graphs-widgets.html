@@ -36,9 +36,10 @@
     .toolbar-btn.pressed, .toolbar-btn:active { background:#ccc; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2); transform: translateY(2px); }
     .toolbar-btn:hover { background:#eee; }
     .separator { color:#484848; margin:0 10px; }
-  #chart-container { height:calc(100vh - 50px); width:100vw; display:block; padding:0; position:relative; }
-  .chart { width:100vw; height:calc(100vh - 50px); background:#fff; border:1px solid #ccc; border-radius:6px; position:relative; }
-  #annotation-canvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+    #chart-container { height:calc(100vh - 50px); width:100%; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:10px; padding:10px; position:relative; }
+    .chart { width:100%; height:100%; background:#fff; border:1px solid #ccc; border-radius:6px; position:relative; }
+    .delete-btn { position:absolute; top:5px; right:5px; background:#555; color:#fff; border:none; border-radius:50%; width:20px; height:20px; font-size:14px; cursor:pointer; z-index:2; }
+    #annotation-canvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
   </style>
 </head>
 <body>
@@ -61,7 +62,10 @@
     <button id="stack-charts" class="toolbar-btn" title="Stack visible charts">🗄️ Stack Charts</button>
   </div>
   <div id="chart-container">
-    <div id="pluginChartCOB" class="chart"></div>
+    <div id="pluginChart1" class="chart"></div>
+  <div id="pluginChart3" class="chart"></div>
+  <div id="pluginChart2" class="chart"></div> 
+  <div id="pluginChart4" class="chart"></div>
     <canvas id="annotation-canvas"></canvas>
   </div>
 
@@ -70,32 +74,203 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts-gl@1/dist/echarts-gl.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts-stat@1/dist/ecStat.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@4/dist/extension/dataTool.min.js"></script>
+  <script src="../charts/pluginChart.js"></script>
+  <script src="../charts/pluginChartCandles.js"></script>
+  <script src="../charts/pluginChartCandlesVolume.js"></script>
   <script src="../charts/pluginChartCOB.js"></script>
   <script src="../includes/WebSocketClient.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 
   <script>
     // --- WebSocket & Chart Init (unchanged) ---
-    document.addEventListener('DOMContentLoaded',()=>{
+    const socketClient = new WebSocketClient('ws://192.168.91:8083');
+    socketClient.on('open', () => console.log('Connected')); socketClient.on('close', () => console.log('Closed'));
+    socketClient.on('error', e => console.error('WS error:',e));
+    socketClient.on('message', async signal => {
       try {
-        window.pluginChartCOB = new PluginChartCOB({
-          containerId: 'pluginChartCOB',
+        const raw = typeof signal==='string'?JSON.parse(signal):JSON.parse(await signal.text());
+        const payload = raw.data||raw;
+  
+    // --- Stack Charts Button ---
+    const stackBtn = document.getElementById('stack-charts');
+    let stackedMode = false;
+    stackBtn.addEventListener('click', () => {
+      const chartContainer = document.getElementById('chart-container');
+      const visibleCharts = Array.from(chartContainer.querySelectorAll('.chart')).filter(ch => ch.offsetParent !== null);
+      if (!stackedMode) {
+        chartContainer.classList.add('stacked');
+        visibleCharts.forEach(ch => {
+          ch.style.width = '100%';
+          ch.style.height = '';
+        });
+        stackBtn.textContent = '🔳 Unstack Charts';
+      } else {
+        chartContainer.classList.remove('stacked');
+        visibleCharts.forEach(ch => {
+          ch.style.width = '';
+          ch.style.height = '';
+        });
+        stackBtn.textContent = '🗄️ Stack Charts';
+      }
+      stackedMode = !stackedMode;
+      setTimeout(adjustChartLayout, 300);
+    });
+        (Array.isArray(payload)?payload:[payload]).forEach(processTradeSignal);
+      } catch(e){console.error('Msg failed',e)}
+    });
+
+    function processTradeSignal(d){
+      
+      if (d.positions && Object.keys(d.positions).length >= 1) {
+        Object.entries(d.positions).forEach(([key, pos]) => {
+          if (pos.symbol === symbol) {
+            const p = {
+              plugin: 'profitLossPlugin',
+              action: 'PLOTTRADE',
+              positions: { [key]: pos },
+            };
+            //console.log(`Position ${key}:`, pos);
+            window.pluginChart1.receiveSignal(p);
+          }
+        });
+      }
+
+      if(!d || !d.plugin || d.symbol !== symbol) {
+        
+      // Check for positions with symbol matching current symbol
+        return;
+        // Handle ProfitLosslPlugin signals
+      }
+      //console.log('Accepted signal:', d);  // <-- Debugging line to see accepted signals
+
+      switch(d.plugin){
+        case 'GoldenCrossPlugin':
+          console.log(`[${d.plugin}] Processing signal for ${d.symbol}`);
+          console.log(d);
+          window.pluginChart3.receiveSignal(d);
+            break;
+        case 'TradeUpdater':
+          console.log(`[${d.plugin}] Processing TradeUpdater signal for ${d.symbol}`);
+          window.pluginChart1.receiveSignal(d);
+          break;
+        case 'L2KDJPlugin':
+          console.log(`[${d.plugin}] Processing L2KDJ signal for ${d.symbol}`);
+          //console.log(d);
+          window.pluginChart4.receiveSignal(d);
+          break;
+        case 'OrderBookWallsPlugin':
+          if (d.buyWalls || d.sellWalls) {
+            //console.log(`[${d.plugin}] BUY-SELL WALLS signal for ${JSON.stringify(d.buyWalls)}`);
+            window.pluginChart1.receiveSignal(d);
+          break;
+          }
+      }
+    }
+    
+    
+    function adjustChartLayout(){
+      Object.values(window).filter(c=>c?.resize).forEach(c=>c.resize());
+    }
+    window.addEventListener('resize', adjustChartLayout);
+    document.getElementById('fullscreen').addEventListener('click',()=>setTimeout(adjustChartLayout,300));
+
+    // ✅ Incredible COB Chart Controls
+    document.getElementById('toggle-candles').addEventListener('click', () => {
+      if (window.pluginChart2 && window.pluginChart2.options) {
+        window.pluginChart2.options.enableCandlesticks = !window.pluginChart2.options.enableCandlesticks;
+        window.pluginChart2.renderChart();
+        const btn = document.getElementById('toggle-candles');
+        btn.style.backgroundColor = window.pluginChart2.options.enableCandlesticks ? '#2d5a87' : '';
+        console.log(`🕯️ Candlesticks ${window.pluginChart2.options.enableCandlesticks ? 'enabled' : 'disabled'}`);
+      }
+    });
+
+    document.getElementById('adaptive-mode').addEventListener('click', () => {
+      if (window.pluginChart2 && window.pluginChart2.options) {
+        window.pluginChart2.options.adaptiveGranularity = !window.pluginChart2.options.adaptiveGranularity;
+        window.pluginChart2.renderChart();
+        const btn = document.getElementById('adaptive-mode');
+        btn.style.backgroundColor = window.pluginChart2.options.adaptiveGranularity ? '#2d5a87' : '';
+        console.log(`🎯 Adaptive granularity ${window.pluginChart2.options.adaptiveGranularity ? 'enabled' : 'disabled'}`);
+      }
+    });
+
+    // --- Initialize Charts ---> plugincandles.js, pluginChart.js
+    // Set symbol from localStorage or default
+    
+    // plugincharCanddles must fix the klineWebSocketUrl to use the plugin manager.    <------ THIS!!!
+    
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      try { window.pluginChart1=new PluginChartCandlesVolume({containerId:'pluginChart1',symbol,klineWebSocketUrl:`ws://192.168.0.91:8080?symbol=${symbol}&duration=1m&limit=30`}); window.pluginChart1.initialize(); } catch(e){console.error('Chart1',e)}
+      try { 
+        // ✅ INCREDIBLE COB + Candlestick Chart with all WebSocket endpoints configured
+        window.pluginChart2=new PluginChartCOB({
+          containerId:'pluginChart2',
           symbol,
-          cobWebSocketUrl: `wss://realm.sanixlab.com/wss/`,
+          cobWebSocketUrl:`ws://192.168.0.91:8084`, // Order book WebSocket
+          // 🚀 ADD CANDLESTICK OVERLAY SUPPORT
           enableCandlesticks: true,
-			  klineWebSocketUrl: `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_1m`,
+          klineWebSocketUrl:`ws://192.168.0.91:8080?symbol=${symbol}&duration=1m&limit=180`, // Candlestick WebSocket
           candlestickOpacity: 0.75,
           maxVisibleCandles: 1,
-          priceRange: symbol === 'BTCUSDT' ? 0.003 : symbol === 'ETHUSDT' ? 0.010 : symbol === 'XRPUSDT' ? 0.02 : 0.02,
-          pricePrecision: symbol === 'BTCUSDT' ? 0 : symbol === 'ETHUSDT' ? 3 : symbol === 'XRPUSDT' ? 3 : 3,
-          priceGrouping: symbol === 'BTCUSDT' ? 5 : symbol === 'ETHUSDT' ? 0.5 : symbol === 'XRPUSDT' ? 0.0005 : 0.0005,
-          percentageThresholdForLabel: 15,
+          // Enhanced settings for the incredible visualization
+            priceRange: symbol === 'BTCUSDT' ? 0.003 : symbol === 'ETHUSDT' ? 0.010 : symbol === 'XRPUSDT' ? 0.02 : 0.02,
+            pricePrecision: symbol === 'BTCUSDT' ? 0 : symbol === 'ETHUSDT' ? 3 : symbol === 'XRPUSDT' ? 3 : 3,
+            priceGrouping: symbol === 'BTCUSDT' ? 5 : symbol === 'ETHUSDT' ? 0.5 : symbol === 'XRPUSDT' ? 0.0005 : 0.0005,
+            percentageThresholdForLabel: symbol === 'BTCUSDT' ? 0.5 : symbol === 'ETHUSDT' ? 5 : symbol === 'XRPUSDT' ? 15.0 : 1.0,
           adaptiveGranularity: true,
           vwapZoneRange: 0.002,
           distantWallThreshold: 20.0
-        });
-        window.pluginChartCOB.initialize();
-        console.log(`🚀 PluginChartCOB initialized for ${symbol}`);
-      } catch(e){console.error('PluginChartCOB',e)}
+        }); 
+        window.pluginChart2.initialize(); 
+        console.log(`🚀 Incredible COB+Candlestick chart initialized for ${symbol}`);
+      } catch(e){console.error('Chart2 (Incredible COB)',e)}
+
+      try { 
+        window.pluginChart3=new PluginChartCandles(
+          {
+            containerId:'pluginChart3',symbol,pluginName:'AlphaBlendPlugin',indicatorKeys:[],markLines:[],klineWebSocketUrl:`ws://192.168.0.91:8080?symbol=${symbol}&duration=1m&limit=180`}); window.pluginChart3.initialize(); 
+      } catch(e){console.error('Chart3',e)
+      }
+
+      try { window.pluginChart4=new PluginChart(
+        {
+          containerId:'pluginChart4',
+          symbol,
+          pluginName:'L2KDJPlugin',
+          indicatorKeys:['K','D','J','whalePump','whaleBleed'],
+          markLines:['20','green','80','red','110','purple','50','yellow'],
+          yAxisMax:120,yAxisMin:-20}); 
+          window.pluginChart4.initialize(); } catch(e){console.error('Chart4',e)
+          }
+
+      document.querySelectorAll('.chart').forEach(ch=>{ const btn=document.createElement('button');btn.className='delete-btn';btn.textContent='✕';btn.onclick=()=>ch.remove();ch.appendChild(btn); });
+
+      // Stack Charts Button logic
+      const stackBtn = document.getElementById('stack-charts');
+      let stackedMode = false;
+      stackBtn.addEventListener('click', () => {
+        const chartContainer = document.getElementById('chart-container');
+        const visibleCharts = Array.from(chartContainer.querySelectorAll('.chart')).filter(ch => ch.offsetParent !== null);
+        if (!stackedMode) {
+          chartContainer.classList.add('stacked');
+          visibleCharts.forEach(ch => {
+            ch.style.width = '100%';
+            ch.style.height = '';
+          });
+          stackBtn.textContent = '🔳 Unstack Charts';
+        } else {
+          chartContainer.classList.remove('stacked');
+          visibleCharts.forEach(ch => {
+            ch.style.width = '';
+            ch.style.height = '';
+          });
+          stackBtn.textContent = '🗄️ Stack Charts';
+        }
+        stackedMode = !stackedMode;
+        setTimeout(adjustChartLayout, 300);
+      });
     });
 
     // --- Draggable & Resizable charts ---
@@ -133,4 +308,3 @@
   </script>
 </body>
 </html>
-
