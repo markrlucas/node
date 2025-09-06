@@ -61,7 +61,7 @@ Contributing
 
 License
 
-- No license file is included in the repo. Add a `LICENSE` if you want to make the project open source.
+None.
 
 Contact
 
