@@ -1080,7 +1080,7 @@ const chart = new PluginChartCOB({
       return data.map(([timeIndex, priceIndex, volume, percentage]) => {
         let color;
         // If percentage is zero or falsy, render the wall as white
-        if (percentage <= 0 || isNaN(percentage)) {
+        if (!Number.isFinite(percentage) || percentage <= 0) {
           color = '#ffffff';
         } else if (percentage < lowThreshold) {
           const colorIndex = Math.floor((percentage / lowThreshold) * 3);
@@ -1247,18 +1247,23 @@ const chart = new PluginChartCOB({
           data: coloredBidsData,
           itemStyle: {
             color: (params) => {
-              // Use clay color as base, but add a gradient to the edges
-              const baseColor = params.data[3] || '#3e2723';
+              // Use clay color as base, but return solid white for explicit white baseColor
+              const baseColorRaw = params.data[3] || '#3e2723';
+              const baseColor = (typeof baseColorRaw === 'string' ? baseColorRaw : String(baseColorRaw)).toLowerCase();
+              // If color was set to white for zero-volume, return solid white to avoid dark shaded edges
+              if (baseColor === '#ffffff' || baseColor === '#fff') {
+                return '#ffffff';
+              }
               // ECharts linearGradient: left to right, darken at edges
               return {
                 type: 'linear',
                 x: 0, y: 0, x2: 1, y2: 1,
                 colorStops: [
-                  { offset: 0, color: shadeColor(baseColor, -30) }, // left/top edge darker
-                  { offset: 0.15, color: shadeColor(baseColor, -10) },
-                  { offset: 0.5, color: baseColor }, // center
-                  { offset: 0.85, color: shadeColor(baseColor, -10) },
-                  { offset: 1, color: shadeColor(baseColor, -30) } // right/bottom edge darker
+                  { offset: 0, color: shadeColor(baseColorRaw, -30) }, // left/top edge darker
+                  { offset: 0.15, color: shadeColor(baseColorRaw, -10) },
+                  { offset: 0.5, color: baseColorRaw }, // center
+                  { offset: 0.85, color: shadeColor(baseColorRaw, -10) },
+                  { offset: 1, color: shadeColor(baseColorRaw, -30) } // right/bottom edge darker
                 ]
               };
             },
@@ -1285,16 +1290,20 @@ const chart = new PluginChartCOB({
           data: coloredAsksData,
           itemStyle: {
             color: (params) => {
-              const baseColor = params.data[3] || '#3e2723';
+              const baseColorRaw = params.data[3] || '#3e2723';
+              const baseColor = (typeof baseColorRaw === 'string' ? baseColorRaw : String(baseColorRaw)).toLowerCase();
+              if (baseColor === '#ffffff' || baseColor === '#fff') {
+                return '#ffffff';
+              }
               return {
                 type: 'linear',
                 x: 0, y: 0, x2: 1, y2: 1,
                 colorStops: [
-                  { offset: 0, color: shadeColor(baseColor, -30) },
-                  { offset: 0.15, color: shadeColor(baseColor, -10) },
-                  { offset: 0.5, color: baseColor },
-                  { offset: 0.85, color: shadeColor(baseColor, -10) },
-                  { offset: 1, color: shadeColor(baseColor, -30) }
+                  { offset: 0, color: shadeColor(baseColorRaw, -30) },
+                  { offset: 0.15, color: shadeColor(baseColorRaw, -10) },
+                  { offset: 0.5, color: baseColorRaw },
+                  { offset: 0.85, color: shadeColor(baseColorRaw, -10) },
+                  { offset: 1, color: shadeColor(baseColorRaw, -30) }
                 ]
               };
             },
