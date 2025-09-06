@@ -244,6 +244,55 @@ const chart = new PluginChartCOB({
   }
 
   /**
+   * Merge and apply new runtime options.
+   * newOpts: partial options object. This attempts to apply changes live.
+   */
+  updateOptions(newOpts = {}) {
+    try {
+      // Merge shallowly
+      this.options = Object.assign({}, this.options || {}, newOpts);
+
+      // If price line enable state changed, start/stop kline socket accordingly
+      if (!this.options.enablePriceLine) {
+        // disable price line: close kline socket if present
+        if (this.klineSocket) {
+          try { this.klineSocket.close(); } catch(e){}
+          this.klineSocket = null;
+        }
+      } else {
+        // enable price line and ensure socket exists if URL provided
+        if (this.klineWebSocketUrl && !this.klineSocket) {
+          try { this.initializeKlineWebSocket(); } catch(e) { console.warn('initializeKlineWebSocket failed', e); }
+        }
+      }
+
+      // If klineWebSocketUrl itself changed, restart connection
+      if (newOpts.klineWebSocketUrl !== undefined) {
+        // rebuild kline URL and restart socket
+        this.klineWebSocketUrl = newOpts.klineWebSocketUrl;
+        if (this.klineSocket) {
+          try { this.klineSocket.close(); } catch(e){}
+          this.klineSocket = null;
+        }
+        if (this.klineWebSocketUrl && this.options.enablePriceLine) {
+          try { this.initializeKlineWebSocket(); } catch(e){ console.warn('kline init failed', e); }
+        }
+      }
+
+      // Trigger safe update: prefer scheduleUpdate, fallback to heatmap update + render
+      if (typeof this.scheduleUpdate === 'function') {
+        this.scheduleUpdate();
+      } else if (typeof this.updateHeatmapData === 'function' && typeof this.renderChart === 'function') {
+        try { this.updateHeatmapData(); this.renderChart(); } catch(e) { console.warn('updateOptions update failed', e); }
+      } else if (typeof this.resize === 'function') {
+        try { this.resize(); } catch(e){}
+      }
+    } catch (err) {
+      console.warn('PluginChartCOB.updateOptions failed', err);
+    }
+  }
+
+  /**
    * Initializes the chart and WebSocket connection.
    */
   initialize() {

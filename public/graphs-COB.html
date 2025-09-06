@@ -90,7 +90,8 @@
     </select>
     <button id="chart-type" class="toolbar-btn">📈</button>
     <button id="fullscreen" class="toolbar-btn">⛶</button>
-    <button id="settings" class="toolbar-btn">⚙</button>
+  <button id="settings" class="toolbar-btn">⚙</button>
+  <button id="toggle-controls" class="toolbar-btn" title="Chart Controls">⚙︎</button>
     <button id="toggle-candles" class="toolbar-btn" title="Toggle Candlesticks on COB Chart">🕯️</button>
     <button id="adaptive-mode" class="toolbar-btn" title="Toggle Adaptive Granularity">🎯</button>
     <span class="separator">|</span>
@@ -102,22 +103,30 @@
     <div id="pluginChartCOB" class="chart">
       <canvas id="annotation-canvas"></canvas>
       <div class="chart-controls" id="chart-controls" aria-label="Chart controls">
-        <div class="ctl-row">
-          <label>priceRange <input id="ctl-priceRange" type="number" step="0.0001"></label>
-        </div>
-        <div class="ctl-row">
-          <label>pricePrecision <input id="ctl-pricePrecision" type="number" step="1"></label>
-        </div>
-        <div class="ctl-row">
-          <label>priceGrouping <input id="ctl-priceGrouping" type="number" step="0.0001"></label>
-        </div>
-        <div class="ctl-row">
-          <label>pctLabel <input id="ctl-percentageThresholdForLabel" type="number" step="1"></label>
-        </div>
-        <div class="ctl-actions">
-          <button class="btn" id="ctl-apply">Apply</button>
-          <button class="btn" id="ctl-reset">Reset</button>
-        </div>
+        <div class="ctl-title">Chart Controls <button id="ctl-close" class="btn" title="Close">✕</button></div>
+        <div class="ctl-row"><label>priceRange <input id="ctl-priceRange" type="number" step="0.0001"></label></div>
+        <div class="ctl-row"><label>pricePrecision <input id="ctl-pricePrecision" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>priceGrouping <input id="ctl-priceGrouping" type="number" step="0.0001"></label></div>
+        <div class="ctl-row"><label>percentageThresholdForLabel <input id="ctl-percentageThresholdForLabel" type="number" step="0.1"></label></div>
+        <div class="ctl-row"><label>showPercentageInLabels <input id="ctl-showPercentageInLabels" type="checkbox"></label></div>
+        <div class="ctl-row"><label>labelMinVolume <input id="ctl-labelMinVolume" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>labelRoundTo <input id="ctl-labelRoundTo" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>minDataPointsForVWAP <input id="ctl-minDataPointsForVWAP" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>maxHistory <input id="ctl-maxHistory" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>maxHeatmapHistory <input id="ctl-maxHeatmapHistory" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>adaptiveGranularity <input id="ctl-adaptiveGranularity" type="checkbox"></label></div>
+        <div class="ctl-row"><label>vwapZoneRange <input id="ctl-vwapZoneRange" type="number" step="0.0001"></label></div>
+        <div class="ctl-row"><label>distantWallThreshold <input id="ctl-distantWallThreshold" type="number" step="0.1"></label></div>
+        <div class="ctl-row"><label>enablePriceLine <input id="ctl-enablePriceLine" type="checkbox"></label></div>
+        <div class="ctl-row"><label>priceLineColor <input id="ctl-priceLineColor" type="color"></label></div>
+        <div class="ctl-row"><label>priceLineOpacity <input id="ctl-priceLineOpacity" type="number" step="0.01" min="0" max="1"></label></div>
+        <div class="ctl-row"><label>priceLineWidth <input id="ctl-priceLineWidth" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>priceLineGlowColor <input id="ctl-priceLineGlowColor" type="color"></label></div>
+        <div class="ctl-row"><label>priceLineGlowBlur <input id="ctl-priceLineGlowBlur" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>percentageThresholdColorVariance <input id="ctl-percentageThresholdColorVariance" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>maxPercentageThresholdColorVariance <input id="ctl-maxPercentageThresholdColorVariance" type="number" step="1"></label></div>
+        <div class="ctl-row"><label>debug <input id="ctl-debug" type="checkbox"></label></div>
+        <div class="ctl-actions"><button class="btn" id="ctl-apply">Apply</button><button class="btn" id="ctl-reset">Reset</button></div>
       </div>
     </div>
   </div>
@@ -181,24 +190,57 @@
     // --- Chart controls wiring ---
     function getCtl(id){ return document.getElementById(id); }
     function populateControls() {
-      const pr = getCtl('ctl-priceRange');
-      const pp = getCtl('ctl-pricePrecision');
-      const pg = getCtl('ctl-priceGrouping');
-      const pl = getCtl('ctl-percentageThresholdForLabel');
-      // try to read from plugin options, fallbacks to sensible defaults
-      const opts = (window.pluginChartCOB && window.pluginChartCOB.options) || {};
-      pr.value = opts.priceRange ?? (window.selectedPriceRange || 0.01);
-      pp.value = opts.pricePrecision ?? (window.selectedPricePrecision ?? 3);
-      pg.value = opts.priceGrouping ?? (window.selectedPriceGrouping ?? 0.0005);
-      pl.value = opts.percentageThresholdForLabel ?? 15;
+          const ids = ['priceRange','pricePrecision','priceGrouping','percentageThresholdForLabel','showPercentageInLabels','labelMinVolume','labelRoundTo','minDataPointsForVWAP','maxHistory','maxHeatmapHistory','adaptiveGranularity','vwapZoneRange','distantWallThreshold','enablePriceLine','priceLineColor','priceLineOpacity','priceLineWidth','priceLineGlowColor','priceLineGlowBlur','percentageThresholdColorVariance','maxPercentageThresholdColorVariance','debug'];
+          const opts = (window.pluginChartCOB && window.pluginChartCOB.options) || {};
+          // Populate each control safely
+          ids.forEach(k => {
+            const el = getCtl('ctl-' + k);
+            if (!el) return;
+            const val = opts[k] !== undefined ? opts[k] : {
+              priceRange: (window.selectedPriceRange || 0.01),
+              pricePrecision: (window.selectedPricePrecision || 3),
+              priceGrouping: (window.selectedPriceGrouping || 0.0005),
+              percentageThresholdForLabel: 15,
+              showPercentageInLabels: false,
+              labelMinVolume: 0,
+              labelRoundTo: 1,
+              minDataPointsForVWAP: 5,
+              maxHistory: 30,
+              maxHeatmapHistory: 30,
+              adaptiveGranularity: true,
+              vwapZoneRange: 0.007,
+              distantWallThreshold: 0.1,
+              enablePriceLine: true,
+              priceLineColor: '#ffd600',
+              priceLineOpacity: 0.9,
+              priceLineWidth: 4,
+              priceLineGlowColor: '#ffff80',
+              priceLineGlowBlur: 18,
+              percentageThresholdColorVariance: 8,
+              maxPercentageThresholdColorVariance: 30,
+              debug: false
+            }[k];
+            if (el.type === 'checkbox') el.checked = Boolean(val);
+            else el.value = (val !== undefined && val !== null) ? val : '';
+          });
     }
 
     function applyControls() {
-      const pr = parseFloat(getCtl('ctl-priceRange').value);
-      const pp = parseInt(getCtl('ctl-pricePrecision').value,10);
-      const pg = parseFloat(getCtl('ctl-priceGrouping').value);
-      const pl = parseFloat(getCtl('ctl-percentageThresholdForLabel').value);
-      const newOpts = { priceRange: pr, pricePrecision: pp, priceGrouping: pg, percentageThresholdForLabel: pl };
+          // collect values from all controls
+          const newOpts = {};
+          const collect = ['priceRange','pricePrecision','priceGrouping','percentageThresholdForLabel','labelMinVolume','labelRoundTo','minDataPointsForVWAP','maxHistory','maxHeatmapHistory','vwapZoneRange','distantWallThreshold','priceLineOpacity','priceLineWidth','priceLineGlowBlur','percentageThresholdColorVariance','maxPercentageThresholdColorVariance'];
+          collect.forEach(k => {
+            const el = getCtl('ctl-' + k);
+            if (!el) return;
+            const v = el.type === 'number' || el.type === 'text' ? el.value : el.value;
+            if (v === '') return;
+            newOpts[k] = (el.type === 'number' || el.type === 'text') ? parseFloat(v) : v;
+          });
+          // booleans and colors
+          ['showPercentageInLabels','adaptiveGranularity','enablePriceLine','debug'].forEach(k => {
+            const el = getCtl('ctl-' + k); if (!el) return; newOpts[k] = !!el.checked;
+          });
+          ['priceLineColor','priceLineGlowColor'].forEach(k => { const el = getCtl('ctl-' + k); if (!el) return; newOpts[k] = el.value; });
       // Prefer a plugin-provided update method
       try {
         if (window.pluginChartCOB && typeof window.pluginChartCOB.updateOptions === 'function') {
@@ -208,14 +250,22 @@
         } else if (window.pluginChartCOB) {
           // lazy-assign and trigger a resize/re-render
           window.pluginChartCOB.options = Object.assign({}, window.pluginChartCOB.options || {}, newOpts);
-          if (typeof window.pluginChartCOB.refresh === 'function') window.pluginChartCOB.refresh();
-          else if (typeof window.pluginChartCOB.resize === 'function') window.pluginChartCOB.resize();
-          else {
-            // try to resize underlying echarts instance to force redraw
-            const dom = document.getElementById('pluginChartCOB');
-            const inst = window.echarts && window.echarts.getInstanceByDom && window.echarts.getInstanceByDom(dom);
-            if (inst && typeof inst.resize === 'function') inst.resize();
-          }
+          // trigger an immediate update path that is safe
+          try {
+            // update internal state and schedule a redraw
+            if (typeof window.pluginChartCOB.scheduleUpdate === 'function') {
+              window.pluginChartCOB.scheduleUpdate();
+            } else if (typeof window.pluginChartCOB.updateHeatmapData === 'function' && typeof window.pluginChartCOB.renderChart === 'function') {
+              window.pluginChartCOB.updateHeatmapData();
+              window.pluginChartCOB.renderChart();
+            } else if (typeof window.pluginChartCOB.resize === 'function') {
+              window.pluginChartCOB.resize();
+            } else {
+              const dom = document.getElementById('pluginChartCOB');
+              const inst = window.echarts && window.echarts.getInstanceByDom && window.echarts.getInstanceByDom(dom);
+              if (inst && typeof inst.resize === 'function') inst.resize();
+            }
+          } catch(err) { console.warn('forced update failed', err); }
         }
       } catch(err){ console.warn('applyControls failed', err); }
     }
@@ -224,8 +274,38 @@
       // small delay to ensure pluginChartCOB created
       setTimeout(()=>{
         populateControls();
-        getCtl('ctl-apply').addEventListener('click', applyControls);
-        getCtl('ctl-reset').addEventListener('click', ()=>{ populateControls(); applyControls(); });
+        const applyBtn = getCtl('ctl-apply');
+        const resetBtn = getCtl('ctl-reset');
+        applyBtn.addEventListener('click', applyControls);
+        resetBtn.addEventListener('click', ()=>{ populateControls(); applyControls(); });
+        // Auto-apply on control change with debounce
+        let autoApplyTimer = null;
+        const autoApplyDebounce = 350; // ms
+        const inputs = Array.from(document.querySelectorAll('#chart-controls input'));
+        inputs.forEach(inp => {
+          const ev = inp.type === 'checkbox' ? 'change' : 'input';
+          inp.addEventListener(ev, ()=>{
+            if (autoApplyTimer) clearTimeout(autoApplyTimer);
+            autoApplyTimer = setTimeout(()=>{ applyControls(); }, autoApplyDebounce);
+          });
+        });
+        // Toggle button in toolbar to show/hide controls
+        const toggleBtn = document.getElementById('toggle-controls');
+        const panel = document.getElementById('chart-controls');
+        const closeBtn = document.getElementById('ctl-close');
+        if (toggleBtn && panel) {
+          toggleBtn.addEventListener('click', ()=>{
+            const open = panel.classList.toggle('open');
+            if (open) populateControls();
+          });
+        }
+        if (closeBtn && panel) closeBtn.addEventListener('click', ()=>panel.classList.remove('open'));
+          // Make control panel draggable/resizable using interact.js if available
+          try {
+            if (window.interact && panel) {
+              interact(panel).draggable({ inertia:true, modifiers:[interact.modifiers.restrictRect({restriction:'parent',endOnly:true})], listeners:{move(e){ const t=e.target; const x=(parseFloat(t.getAttribute('data-x'))||0)+e.dx; const y=(parseFloat(t.getAttribute('data-y'))||0)+e.dy; t.style.transform=`translate(${x}px,${y}px)`; t.setAttribute('data-x',x); t.setAttribute('data-y',y); }}}).resizable({ edges:{left:true,right:true,top:true,bottom:true}, modifiers:[interact.modifiers.restrictEdges({outer:'parent'}), interact.modifiers.restrictSize({min:{width:200,height:120}})], listeners:{move(e){ const t=e.target; t.style.width=e.rect.width+'px'; t.style.height=e.rect.height+'px'; const x=parseFloat(t.getAttribute('data-x'))||0, y=parseFloat(t.getAttribute('data-y'))||0; t.style.transform=`translate(${x}px,${y}px)`; } } });
+            }
+          } catch(err){ /* ignore if interact missing */ }
       }, 200);
     });
 
