@@ -783,8 +783,10 @@ const chart = new PluginChartCOB({
       const totalVolume = Array.from(currentVolumes.values()).reduce((sum, vol) => sum + vol, 0);
 
       // --- Process volumes with percentage calculations and adaptive filtering ---
+      // Ensure no percentage is ever 0%: set a minimum floor of 0.1%
+      const PERCENTAGE_FLOOR = 0.1;
       currentVolumes.forEach((volume, priceIndex) => {
-        const percentage = totalVolume > 0 ? (volume / totalVolume) * 100 : 0;
+        const percentage = totalVolume > 0 ? Math.max((volume / totalVolume) * 100, PERCENTAGE_FLOOR) : PERCENTAGE_FLOOR;
         const priceLevel = parseFloat(this.priceAxisData[priceIndex]);
 
         // Apply adaptive filtering based on distance from VWAP
@@ -876,8 +878,14 @@ const chart = new PluginChartCOB({
       });
 
       // --- Add the final calculated volumes and percentages for this time slice to the heatmap data ---
+      // Recompute totalVolume in case ghost levels were added above, and apply the same floor
+      const finalTotalVolume = Array.from(currentVolumes.values()).reduce((sum, vol) => sum + vol, 0);
       currentVolumes.forEach((volume, priceIndex) => {
-        const percentage = totalVolume > 0 ? (volume / totalVolume) * 100 : 0;
+        const percentage = finalTotalVolume > 0 ? Math.max((volume / finalTotalVolume) * 100, PERCENTAGE_FLOOR) : PERCENTAGE_FLOOR;
+        if (this.options.debug && percentage <= PERCENTAGE_FLOOR + 1e-12) {
+          // Log symbol, timeIndex, priceIndex, volume and percentage when floor is hit
+          console.debug('PluginChartCOB: percentage floor hit', { symbol: this.options.symbol, timeIndex, priceIndex, volume, percentage });
+        }
         heatmapData.push([timeIndex, priceIndex, volume, percentage]);
       });
     };
