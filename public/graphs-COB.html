@@ -199,7 +199,10 @@
     function getCtl(id){ return document.getElementById(id); }
     function populateControls() {
           const ids = ['priceRange','pricePrecision','priceGrouping','percentageThresholdForLabel','showPercentageInLabels','labelMinVolume','labelRoundTo','minDataPointsForVWAP','maxHistory','maxHeatmapHistory','adaptiveGranularity','vwapZoneRange','distantWallThreshold','enablePriceLine','priceLineColor','priceLineOpacity','priceLineWidth','priceLineGlowColor','priceLineGlowBlur','percentageThresholdColorVariance','maxPercentageThresholdColorVariance','debug'];
-          const opts = (window.pluginChartCOB && window.pluginChartCOB.options) || {};
+              // Load saved opts from localStorage (persisted user edits) and merge with plugin defaults
+              let savedOpts = {};
+              try { savedOpts = JSON.parse(localStorage.getItem('pluginChartCOB.options') || '{}') || {}; } catch(e){ savedOpts = {}; }
+              const opts = Object.assign({}, (window.pluginChartCOB && window.pluginChartCOB.options) || {}, savedOpts);
           // Populate each control safely
           ids.forEach(k => {
             const el = getCtl('ctl-' + k);
@@ -275,6 +278,11 @@
             }
           } catch(err) { console.warn('forced update failed', err); }
         }
+            // Persist the merged options so user edits survive reloads
+            try {
+              const merged = Object.assign({}, (window.pluginChartCOB && window.pluginChartCOB.options) || {}, newOpts);
+              localStorage.setItem('pluginChartCOB.options', JSON.stringify(merged));
+            } catch(e){ console.warn('failed saving pluginChartCOB.options', e); }
       } catch(err){ console.warn('applyControls failed', err); }
     }
 
