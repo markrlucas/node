@@ -37,8 +37,8 @@
     .toolbar-btn:hover { background:#eee; }
     .separator { color:#484848; margin:0 10px; }
 
-    /* Widget slate (container) */
-    #chart-container { height: calc(100vh - 50px); width: 100vw; display: flex; align-items: stretch; justify-content: center; padding: 18px; box-sizing: border-box; background: linear-gradient(180deg,#e6ecf3,#dfe7ee); }
+  /* Widget slate (container) */
+  #chart-container { position: relative; height: calc(100vh - 50px); width: 100vw; display: flex; align-items: stretch; justify-content: center; padding: 18px; box-sizing: border-box; background: linear-gradient(180deg,#e6ecf3,#dfe7ee); }
 
     /* Chart widget: fills container and shows a 5px white 3D border */
     .chart {
@@ -108,32 +108,32 @@
   <div id="chart-container">
     <div id="pluginChartCOB" class="chart">
       <canvas id="annotation-canvas"></canvas>
-      <div class="chart-controls" id="chart-controls" aria-label="Chart controls">
-        <div class="ctl-title">Chart Controls <button id="ctl-close" class="btn" title="Close">✕</button></div>
-        <div class="ctl-row"><label>priceRange <input id="ctl-priceRange" type="number" step="0.0001"></label></div>
-        <div class="ctl-row"><label>pricePrecision <input id="ctl-pricePrecision" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>priceGrouping <input id="ctl-priceGrouping" type="number" step="0.0001"></label></div>
-        <div class="ctl-row"><label>percentageThresholdForLabel <input id="ctl-percentageThresholdForLabel" type="number" step="0.1"></label></div>
-        <div class="ctl-row"><label>showPercentageInLabels <input id="ctl-showPercentageInLabels" type="checkbox"></label></div>
-        <div class="ctl-row"><label>labelMinVolume <input id="ctl-labelMinVolume" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>labelRoundTo <input id="ctl-labelRoundTo" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>minDataPointsForVWAP <input id="ctl-minDataPointsForVWAP" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>maxHistory <input id="ctl-maxHistory" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>maxHeatmapHistory <input id="ctl-maxHeatmapHistory" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>adaptiveGranularity <input id="ctl-adaptiveGranularity" type="checkbox"></label></div>
-        <div class="ctl-row"><label>vwapZoneRange <input id="ctl-vwapZoneRange" type="number" step="0.0001"></label></div>
-        <div class="ctl-row"><label>distantWallThreshold <input id="ctl-distantWallThreshold" type="number" step="0.1"></label></div>
-        <div class="ctl-row"><label>enablePriceLine <input id="ctl-enablePriceLine" type="checkbox"></label></div>
-        <div class="ctl-row"><label>priceLineColor <input id="ctl-priceLineColor" type="color"></label></div>
-        <div class="ctl-row"><label>priceLineOpacity <input id="ctl-priceLineOpacity" type="number" step="0.01" min="0" max="1"></label></div>
-        <div class="ctl-row"><label>priceLineWidth <input id="ctl-priceLineWidth" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>priceLineGlowColor <input id="ctl-priceLineGlowColor" type="color"></label></div>
-        <div class="ctl-row"><label>priceLineGlowBlur <input id="ctl-priceLineGlowBlur" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>percentageThresholdColorVariance <input id="ctl-percentageThresholdColorVariance" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>maxPercentageThresholdColorVariance <input id="ctl-maxPercentageThresholdColorVariance" type="number" step="1"></label></div>
-        <div class="ctl-row"><label>debug <input id="ctl-debug" type="checkbox"></label></div>
-        <div class="ctl-actions"><button class="btn" id="ctl-apply">Apply</button><button class="btn" id="ctl-reset">Reset</button></div>
-      </div>
+    </div>
+    <div class="chart-controls" id="chart-controls" aria-label="Chart controls">
+      <div class="ctl-title">Chart Controls <button id="ctl-close" class="btn" title="Close">✕</button></div>
+      <div class="ctl-row"><label>priceRange <input id="ctl-priceRange" type="number" step="0.0001"></label></div>
+      <div class="ctl-row"><label>pricePrecision <input id="ctl-pricePrecision" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>priceGrouping <input id="ctl-priceGrouping" type="number" step="0.0001"></label></div>
+      <div class="ctl-row"><label>percentageThresholdForLabel <input id="ctl-percentageThresholdForLabel" type="number" step="0.1"></label></div>
+      <div class="ctl-row"><label>showPercentageInLabels <input id="ctl-showPercentageInLabels" type="checkbox"></label></div>
+      <div class="ctl-row"><label>labelMinVolume <input id="ctl-labelMinVolume" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>labelRoundTo <input id="ctl-labelRoundTo" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>minDataPointsForVWAP <input id="ctl-minDataPointsForVWAP" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>maxHistory <input id="ctl-maxHistory" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>maxHeatmapHistory <input id="ctl-maxHeatmapHistory" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>adaptiveGranularity <input id="ctl-adaptiveGranularity" type="checkbox"></label></div>
+      <div class="ctl-row"><label>vwapZoneRange <input id="ctl-vwapZoneRange" type="number" step="0.0001"></label></div>
+      <div class="ctl-row"><label>distantWallThreshold <input id="ctl-distantWallThreshold" type="number" step="0.1"></label></div>
+      <div class="ctl-row"><label>enablePriceLine <input id="ctl-enablePriceLine" type="checkbox"></label></div>
+      <div class="ctl-row"><label>priceLineColor <input id="ctl-priceLineColor" type="color"></label></div>
+      <div class="ctl-row"><label>priceLineOpacity <input id="ctl-priceLineOpacity" type="number" step="0.01" min="0" max="1"></label></div>
+      <div class="ctl-row"><label>priceLineWidth <input id="ctl-priceLineWidth" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>priceLineGlowColor <input id="ctl-priceLineGlowColor" type="color"></label></div>
+      <div class="ctl-row"><label>priceLineGlowBlur <input id="ctl-priceLineGlowBlur" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>percentageThresholdColorVariance <input id="ctl-percentageThresholdColorVariance" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>maxPercentageThresholdColorVariance <input id="ctl-maxPercentageThresholdColorVariance" type="number" step="1"></label></div>
+      <div class="ctl-row"><label>debug <input id="ctl-debug" type="checkbox"></label></div>
+      <div class="ctl-actions"><button class="btn" id="ctl-apply">Apply</button><button class="btn" id="ctl-reset">Reset</button></div>
     </div>
   </div>
 
@@ -142,6 +142,8 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts-gl@1/dist/echarts-gl.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts-stat@1/dist/ecStat.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@4/dist/extension/dataTool.min.js"></script>
+  <!-- interact.js for draggable/resizable UI helpers -->
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
   <script src="../charts/pluginChartCOB.js"></script>
   <script src="../includes/WebSocketClient.js"></script>
 
@@ -277,23 +279,22 @@
     }
 
     document.addEventListener('DOMContentLoaded', ()=>{
-      // small delay to ensure pluginChartCOB created
-      setTimeout(()=>{
-        populateControls();
+      // idempotent wiring for controls: run now and also observe DOM changes in case plugin mutates container
+      function attachControlWiringOnce() {
+        if (window._chartControlsWired) return true; // already wired
+        const panel = document.getElementById('chart-controls');
+        if (!panel) return false;
+        // wire apply/reset
         const applyBtn = getCtl('ctl-apply');
         const resetBtn = getCtl('ctl-reset');
-        if (applyBtn) {
-          applyBtn.addEventListener('click', applyControls);
-        } else { console.warn('Chart controls: apply button not found'); }
-        if (resetBtn) {
-          resetBtn.addEventListener('click', ()=>{ populateControls(); applyControls(); });
-        } else { console.warn('Chart controls: reset button not found'); }
+        if (applyBtn) applyBtn.addEventListener('click', applyControls); else console.warn('Chart controls: apply button not found');
+        if (resetBtn) resetBtn.addEventListener('click', ()=>{ populateControls(); applyControls(); }); else console.warn('Chart controls: reset button not found');
         // Auto-apply on control change with debounce
         let autoApplyTimer = null;
         const autoApplyDebounce = 350; // ms
-  const inputs = Array.from(document.querySelectorAll('#chart-controls input')) || [];
-  if (inputs.length === 0) console.warn('Chart controls: no inputs found for auto-apply');
-  inputs.forEach(inp => {
+        const inputs = Array.from(panel.querySelectorAll('input')) || [];
+        if (inputs.length === 0) console.warn('Chart controls: no inputs found for auto-apply');
+        inputs.forEach(inp => {
           const ev = inp.type === 'checkbox' ? 'change' : 'input';
           inp.addEventListener(ev, ()=>{
             if (autoApplyTimer) clearTimeout(autoApplyTimer);
@@ -301,34 +302,46 @@
           });
         });
         // Toggle button in toolbar to show/hide controls
-  const toggleBtn = document.getElementById('toggle-controls');
-  const panel = document.getElementById('chart-controls');
-  const closeBtn = document.getElementById('ctl-close');
-  // ensure panel starts closed
-  if (panel) {
-    panel.classList.remove('open');
-    panel.setAttribute('aria-hidden', 'true');
-  } else {
-    console.warn('Chart controls panel not found');
-  }
-  if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
-  if (toggleBtn && panel) {
-    toggleBtn.addEventListener('click', ()=>{
-      const open = panel.classList.toggle('open');
-      panel.setAttribute('aria-hidden', open ? 'false' : 'true');
-      toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      console.log('Chart controls toggled:', open);
-      if (open) populateControls();
-    });
-  }
-  if (closeBtn && panel) closeBtn.addEventListener('click', ()=>{ panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); if (toggleBtn) toggleBtn.setAttribute('aria-expanded','false'); });
-          // Make control panel draggable/resizable using interact.js if available
-          try {
-            if (window.interact && panel) {
-              interact(panel).draggable({ inertia:true, modifiers:[interact.modifiers.restrictRect({restriction:'parent',endOnly:true})], listeners:{move(e){ const t=e.target; const x=(parseFloat(t.getAttribute('data-x'))||0)+e.dx; const y=(parseFloat(t.getAttribute('data-y'))||0)+e.dy; t.style.transform=`translate(${x}px,${y}px)`; t.setAttribute('data-x',x); t.setAttribute('data-y',y); }}}).resizable({ edges:{left:true,right:true,top:true,bottom:true}, modifiers:[interact.modifiers.restrictEdges({outer:'parent'}), interact.modifiers.restrictSize({min:{width:200,height:120}})], listeners:{move(e){ const t=e.target; t.style.width=e.rect.width+'px'; t.style.height=e.rect.height+'px'; const x=parseFloat(t.getAttribute('data-x'))||0, y=parseFloat(t.getAttribute('data-y'))||0; t.style.transform=`translate(${x}px,${y}px)`; } } });
-            }
-          } catch(err){ /* ignore if interact missing */ }
-      }, 200);
+        const toggleBtn = document.getElementById('toggle-controls');
+        const closeBtn = document.getElementById('ctl-close');
+        // ensure panel starts closed
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+        if (toggleBtn) {
+          toggleBtn.addEventListener('click', ()=>{
+            const open = panel.classList.toggle('open');
+            panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+            toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            console.log('Chart controls toggled:', open);
+            if (open) populateControls();
+          });
+        }
+        if (closeBtn) closeBtn.addEventListener('click', ()=>{ panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); if (toggleBtn) toggleBtn.setAttribute('aria-expanded','false'); });
+        // Make control panel draggable/resizable using interact.js if available
+        try {
+          if (window.interact && panel) {
+            interact(panel).draggable({ inertia:true, modifiers:[interact.modifiers.restrictRect({restriction:'parent',endOnly:true})], listeners:{move(e){ const t=e.target; const x=(parseFloat(t.getAttribute('data-x'))||0)+e.dx; const y=(parseFloat(t.getAttribute('data-y'))||0)+e.dy; t.style.transform=`translate(${x}px,${y}px)`; t.setAttribute('data-x',x); t.setAttribute('data-y',y); }}}).resizable({ edges:{left:true,right:true,top:true,bottom:true}, modifiers:[interact.modifiers.restrictEdges({outer:'parent'}), interact.modifiers.restrictSize({min:{width:200,height:120}})], listeners:{move(e){ const t=e.target; t.style.width=e.rect.width+'px'; t.style.height=e.rect.height+'px'; const x=parseFloat(t.getAttribute('data-x'))||0, y=parseFloat(t.getAttribute('data-y'))||0; t.style.transform=`translate(${x}px,${y}px)`; } } });
+          } else {
+            console.info('interact.js not detected for panel: draggable/resizable disabled');
+          }
+        } catch(err){ console.warn('panel interact init failed', err); }
+
+        window._chartControlsWired = true;
+        return true;
+      }
+
+      // Try wiring now after a small delay
+      setTimeout(()=>{ if (!attachControlWiringOnce()) {
+          // If controls not present yet, observe the container for additions and wire when available
+          const container = document.getElementById('chart-container') || document.body;
+          const obs = new MutationObserver((mutations, ob)=>{
+            if (attachControlWiringOnce()) { ob.disconnect(); }
+          });
+          obs.observe(container, { childList: true, subtree: true });
+          // safety: stop observing after 8 seconds
+          setTimeout(()=>{ try{ obs.disconnect(); }catch(e){} }, 8000);
+        } }, 200);
     });
 
     // --- Draggable & Resizable charts (guarded: only initialize if interact available) ---
