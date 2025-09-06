@@ -36,9 +36,47 @@
     .toolbar-btn.pressed, .toolbar-btn:active { background:#ccc; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2); transform: translateY(2px); }
     .toolbar-btn:hover { background:#eee; }
     .separator { color:#484848; margin:0 10px; }
-  #chart-container { height:calc(100vh - 50px); width:100vw; display:block; padding:0; position:relative; }
-  .chart { width:100vw; height:calc(100vh - 50px); background:#fff; border:1px solid #ccc; border-radius:6px; position:relative; }
-  #annotation-canvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+
+    /* Widget slate (container) */
+    #chart-container { height: calc(100vh - 50px); width: 100vw; display: flex; align-items: stretch; justify-content: center; padding: 18px; box-sizing: border-box; background: linear-gradient(180deg,#e6ecf3,#dfe7ee); }
+
+    /* Chart widget: fills container and shows a 5px white 3D border */
+    .chart {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      background: #ffffff; /* chart drawing area */
+      border: 5px solid #ffffff; /* bright white "frame" */
+      border-radius: 8px;
+      position: relative;
+      /* subtle 3D lift */
+      box-shadow: 0 14px 28px rgba(0,0,0,0.22), 0 6px 12px rgba(0,0,0,0.12), inset 0 -6px 8px rgba(0,0,0,0.03);
+      overflow: hidden;
+    }
+
+    /* Annotation canvas overlays the chart precisely */
+    #annotation-canvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:2; }
+
+    /* Top-left control panel inside the chart */
+    .chart-controls {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 5;
+      background: rgba(255,255,255,0.92);
+      border-radius: 8px;
+      padding: 8px 10px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+      font-size: 13px;
+      color: #111;
+      min-width: 220px;
+      backdrop-filter: blur(4px);
+    }
+    .chart-controls label { display:flex; justify-content:space-between; gap:8px; align-items:center; margin:6px 0; }
+    .chart-controls input[type='number'], .chart-controls input[type='text'], .chart-controls select { width:100px; font-size:13px; padding:4px 6px; border-radius:4px; border:1px solid #cfcfcf; }
+    .chart-controls .ctl-row { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+    .chart-controls .ctl-actions { display:flex; gap:8px; margin-top:6px; justify-content:flex-end; }
+    .chart-controls .btn { background:#f3f3f3; border:1px solid #d0d0d0; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:13px; }
   </style>
 </head>
 <body>
@@ -61,8 +99,27 @@
     <button id="stack-charts" class="toolbar-btn" title="Stack visible charts">🗄️ Stack Charts</button>
   </div>
   <div id="chart-container">
-    <div id="pluginChartCOB" class="chart"></div>
-    <canvas id="annotation-canvas"></canvas>
+    <div id="pluginChartCOB" class="chart">
+      <canvas id="annotation-canvas"></canvas>
+      <div class="chart-controls" id="chart-controls" aria-label="Chart controls">
+        <div class="ctl-row">
+          <label>priceRange <input id="ctl-priceRange" type="number" step="0.0001"></label>
+        </div>
+        <div class="ctl-row">
+          <label>pricePrecision <input id="ctl-pricePrecision" type="number" step="1"></label>
+        </div>
+        <div class="ctl-row">
+          <label>priceGrouping <input id="ctl-priceGrouping" type="number" step="0.0001"></label>
+        </div>
+        <div class="ctl-row">
+          <label>pctLabel <input id="ctl-percentageThresholdForLabel" type="number" step="1"></label>
+        </div>
+        <div class="ctl-actions">
+          <button class="btn" id="ctl-apply">Apply</button>
+          <button class="btn" id="ctl-reset">Reset</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Libraries -->
@@ -94,15 +151,112 @@
           distantWallThreshold: 20.0
         });
         window.pluginChartCOB.initialize();
+        // ensure chart and overlay fill widget
+        function resizeWidget() {
+          const widget = document.getElementById('pluginChartCOB');
+          if (!widget) return;
+          // ensure echarts instance resizes (plugin or fallback to echarts instance)
+          if (window.pluginChartCOB && typeof window.pluginChartCOB.resize === 'function') {
+            try { window.pluginChartCOB.resize(); } catch(e){ console.warn('chart resize error', e); }
+          } else {
+            try {
+              const dom = document.getElementById('pluginChartCOB');
+              const inst = window.echarts && window.echarts.getInstanceByDom && window.echarts.getInstanceByDom(dom);
+              if (inst && typeof inst.resize === 'function') inst.resize();
+            } catch(e){ /* ignore */ }
+          }
+          const canvas = widget.querySelector('#annotation-canvas');
+          if (canvas) {
+            canvas.width = widget.clientWidth;
+            canvas.height = widget.clientHeight;
+          }
+        }
+        // call once and on window resize
+        setTimeout(resizeWidget, 120);
+        window.addEventListener('resize', resizeWidget);
         console.log(`🚀 PluginChartCOB initialized for ${symbol}`);
       } catch(e){console.error('PluginChartCOB',e)}
+    });
+
+    // --- Chart controls wiring ---
+    function getCtl(id){ return document.getElementById(id); }
+    function populateControls() {
+      const pr = getCtl('ctl-priceRange');
+      const pp = getCtl('ctl-pricePrecision');
+      const pg = getCtl('ctl-priceGrouping');
+      const pl = getCtl('ctl-percentageThresholdForLabel');
+      // try to read from plugin options, fallbacks to sensible defaults
+      const opts = (window.pluginChartCOB && window.pluginChartCOB.options) || {};
+      pr.value = opts.priceRange ?? (window.selectedPriceRange || 0.01);
+      pp.value = opts.pricePrecision ?? (window.selectedPricePrecision ?? 3);
+      pg.value = opts.priceGrouping ?? (window.selectedPriceGrouping ?? 0.0005);
+      pl.value = opts.percentageThresholdForLabel ?? 15;
+    }
+
+    function applyControls() {
+      const pr = parseFloat(getCtl('ctl-priceRange').value);
+      const pp = parseInt(getCtl('ctl-pricePrecision').value,10);
+      const pg = parseFloat(getCtl('ctl-priceGrouping').value);
+      const pl = parseFloat(getCtl('ctl-percentageThresholdForLabel').value);
+      const newOpts = { priceRange: pr, pricePrecision: pp, priceGrouping: pg, percentageThresholdForLabel: pl };
+      // Prefer a plugin-provided update method
+      try {
+        if (window.pluginChartCOB && typeof window.pluginChartCOB.updateOptions === 'function') {
+          window.pluginChartCOB.updateOptions(newOpts);
+        } else if (window.pluginChartCOB && typeof window.pluginChartCOB.setOptions === 'function') {
+          window.pluginChartCOB.setOptions(Object.assign({}, window.pluginChartCOB.options || {}, newOpts));
+        } else if (window.pluginChartCOB) {
+          // lazy-assign and trigger a resize/re-render
+          window.pluginChartCOB.options = Object.assign({}, window.pluginChartCOB.options || {}, newOpts);
+          if (typeof window.pluginChartCOB.refresh === 'function') window.pluginChartCOB.refresh();
+          else if (typeof window.pluginChartCOB.resize === 'function') window.pluginChartCOB.resize();
+          else {
+            // try to resize underlying echarts instance to force redraw
+            const dom = document.getElementById('pluginChartCOB');
+            const inst = window.echarts && window.echarts.getInstanceByDom && window.echarts.getInstanceByDom(dom);
+            if (inst && typeof inst.resize === 'function') inst.resize();
+          }
+        }
+      } catch(err){ console.warn('applyControls failed', err); }
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // small delay to ensure pluginChartCOB created
+      setTimeout(()=>{
+        populateControls();
+        getCtl('ctl-apply').addEventListener('click', applyControls);
+        getCtl('ctl-reset').addEventListener('click', ()=>{ populateControls(); applyControls(); });
+      }, 200);
     });
 
     // --- Draggable & Resizable charts ---
     interact('.chart').draggable({ inertia:true, modifiers:[interact.modifiers.restrictRect({restriction:'parent',endOnly:true})], listeners:{move(e){
       const t=e.target, x=(parseFloat(t.getAttribute('data-x'))||0)+e.dx, y=(parseFloat(t.getAttribute('data-y'))||0)+e.dy;
       t.style.transform=`translate(${x}px,${y}px)`; t.setAttribute('data-x',x); t.setAttribute('data-y',y);
-    }}}).resizable({ edges:{left:true,right:true,top:true,bottom:true}, modifiers:[interact.modifiers.restrictEdges({outer:'parent'}),interact.modifiers.restrictSize({min:{width:100,height:100}})], listeners:{move(e){ const t=e.target; t.style.width=e.rect.width+'px'; t.style.height=e.rect.height+'px'; const x=parseFloat(t.getAttribute('data-x'))||0, y=parseFloat(t.getAttribute('data-y'))||0; t.style.transform=`translate(${x}px,${y}px)`; window[t.id]?.resize(); }} });
+    }}}).resizable({ edges:{left:true,right:true,top:true,bottom:true}, modifiers:[interact.modifiers.restrictEdges({outer:'parent'}),interact.modifiers.restrictSize({min:{width:150,height:120}})], listeners:{move(e){
+        const t=e.target;
+        // Apply size and keep transform
+        t.style.width=e.rect.width+'px';
+        t.style.height=e.rect.height+'px';
+        const x=parseFloat(t.getAttribute('data-x'))||0, y=parseFloat(t.getAttribute('data-y'))||0;
+        t.style.transform=`translate(${x}px,${y}px)`;
+        // Notify chart instance to resize if available, otherwise fallback to echarts instance
+        if (window[t.id] && typeof window[t.id].resize === 'function') {
+          try { window[t.id].resize(); } catch(err){ console.warn('chart resize failed', err); }
+        } else {
+          try {
+            const dom = document.getElementById(t.id);
+            const inst = window.echarts && window.echarts.getInstanceByDom && window.echarts.getInstanceByDom(dom);
+            if (inst && typeof inst.resize === 'function') inst.resize();
+          } catch(err){ /* ignore */ }
+        }
+        // Resize annotation canvas overlay inside the chart
+        const canvas = t.querySelector && t.querySelector('#annotation-canvas');
+        if (canvas) {
+          canvas.width = t.clientWidth;
+          canvas.height = t.clientHeight;
+        }
+    } } });
 
     // --- Annotation Tools ---
     const annotationCanvas=document.getElementById('annotation-canvas'), ctx=annotationCanvas.getContext('2d'), toolbar=document.getElementById('top-toolbar');
