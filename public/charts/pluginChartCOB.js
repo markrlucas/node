@@ -1,13 +1,3 @@
-// THIS IS A WORK IN PROGRESS, IF YOU FIND IT USEFULL SEND ME SOME XRP - r9YuvurJ4zsJuGy8BzuDPmGRC1bUMSGGFW
-// One things for sure a clear view of the current order book makes trading consistent, but, cant help with the discipline..
-//
-//
-// This is about 5% of a trading platform I've developed.  Having spent alot of time learning from the legends on the cryptocurrencies channel @ TradingView 
-// I'll slowly upload the rest.   If you find this usefull let me know X:  @SANIXLAB TradingView:  MR.L
-//
-// Cheers Mark.
-
-
 /**
  * PluginChartCOB: A chart plugin to visualize Consolidated Order Book (COB) data as a heatmap.
  * It connects to a WebSocket service providing order book snapshots and updates.
@@ -127,8 +117,10 @@ const chart = new PluginChartCOB({
       priceRange: 0.03, // was 0.7 (70%) — changed to 0.03 (3%) to match comments
       pricePrecision: 4, // 0.0000 for 4 decimal places (good for this price range)
       priceGrouping: 0.0008, // Smaller buckets for better granularity (0.5 basis points)
-      percentageThresholdForLabel: 0.05, // 5% threshold for showing labels
-      showPercentageInLabels: false, // Set to true to show percentages in labels
+  percentageThresholdForLabel: 0.05, // 5% threshold for showing labels
+  showPercentageInLabels: false, // Set to true to show percentages in labels
+  labelMinVolume: 0, // Always allow label if percentage threshold is met
+  labelRoundTo: 1, // Show actual volume, not rounded to 1000
       minDataPointsForVWAP: 5, // Minimum data points before showing VWAP (configurable)
       maxHistory: 30, // Default history to DISPLAY on chart (30 seconds at 1s intervals)
       maxHeatmapHistory: 30, // Default history to STORE for heatmap data (30 seconds)
@@ -147,8 +139,8 @@ const chart = new PluginChartCOB({
   // Labeling controls: only create textual summary labels for price levels
   // when the raw volume meets a minimum threshold. Rounds displayed value
   // to the nearest `labelRoundTo` (e.g. 5000 for 5k, 10000 for 10k).
-  labelMinVolume: 5000,
-  labelRoundTo: 5000,
+  labelMinVolume: 0,
+  labelRoundTo: 1,
       ...options,
     };
 
@@ -810,17 +802,30 @@ const chart = new PluginChartCOB({
         // Update or add to tracked levels if volume is significant (based on percentage threshold)
         if (percentage > this.options.percentageThresholdForLabel) {
           // Only create textual labels when the raw volume exceeds configured minimum
-          const shouldLabel = volume >= (this.options.labelMinVolume || 0);
+          const shouldLabel = volume >= (this.options.labelMinVolume !== undefined ? this.options.labelMinVolume : 0);
           if (shouldLabel && !trackedSide[priceIndex]?.hasLabel) {
-            // Round the displayed volume to the nearest labelRoundTo step
-            const roundTo = this.options.labelRoundTo || 1000;
-            const rounded = Math.round(volume / roundTo) * roundTo;
-            const volumeK = (rounded / 1000).toFixed(0);
+            // Show actual volume, use 'k' only if >= 1000
             let labelText;
             if (this.options.showPercentageInLabels) {
-              labelText = isBid ? `+${volumeK}k (${percentage.toFixed(1)}%)` : `-${volumeK}k (${percentage.toFixed(1)}%)`;
+              if (volume >= 1000) {
+                labelText = isBid
+                  ? `+${(volume/1000).toFixed(1)}k (${percentage.toFixed(1)}%)`
+                  : `-${(volume/1000).toFixed(1)}k (${percentage.toFixed(1)}%)`;
+              } else {
+                labelText = isBid
+                  ? `+${Number(volume).toFixed(0)} (${percentage.toFixed(1)}%)`
+                  : `-${Number(volume).toFixed(0)} (${percentage.toFixed(1)}%)`;
+              }
             } else {
-              labelText = isBid ? `+${volumeK}k` : `-${volumeK}k`;
+              if (volume >= 1000) {
+                labelText = isBid
+                  ? `+${(volume/1000).toFixed(1)}k`
+                  : `-${(volume/1000).toFixed(1)}k`;
+              } else {
+                labelText = isBid
+                  ? `+${Number(volume).toFixed(0)}`
+                  : `-${Number(volume).toFixed(0)}`;
+              }
             }
             const newLabel = {
               value: [timeIndex, priceIndex, volume, labelText]
