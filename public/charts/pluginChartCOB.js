@@ -1079,7 +1079,10 @@ const chart = new PluginChartCOB({
 
       return data.map(([timeIndex, priceIndex, volume, percentage]) => {
         let color;
-        if (percentage < lowThreshold) {
+        // If percentage is zero or falsy, render the wall as white
+        if (percentage <= 0 || isNaN(percentage)) {
+          color = '#ffffff';
+        } else if (percentage < lowThreshold) {
           const colorIndex = Math.floor((percentage / lowThreshold) * 3);
           color = colors[Math.max(0, Math.min(colors.length - 1, colorIndex))];
         } else if (percentage <= highThreshold) {
