@@ -15,6 +15,8 @@ Key files
 - `includes/` — small helper scripts used by some pages.
 - `services/` — backend utilities and websocket helpers.
 
+06/09/2025 Note: service/trade-engine/plugins - contains ports of popular pinescript scripts and plugins I will get working on the live demo over the next few weeks.
+
 Quick start (local)
 
 1. Install dependencies
@@ -61,7 +63,7 @@ Contributing
 
 License
 
-- No license file is included in the repo. Add a `LICENSE` if you want to make the project open source.
+None.
 
 Contact
 
