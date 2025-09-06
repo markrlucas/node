@@ -32,6 +32,17 @@ app.get('/includes/:filename', (req, res) => {
   }
 });
 
+
+// Serve graphs-widgets.html for root if it exists, otherwise send a default message
+app.get('/', (req, res) => {
+  const indexPath = path.join(__dirname, 'public', 'graphs-widgets.html');
+  res.sendFile(indexPath, err => {
+    if (err) {
+      res.send('Server is running!');
+    }
+  });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
