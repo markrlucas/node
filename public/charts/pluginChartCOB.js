@@ -1073,14 +1073,14 @@ const chart = new PluginChartCOB({
 
     // Calculate percentage-based colors for bids and asks
     const calculatePercentageBasedColors = (data, colors) => {
-      const lowThreshold = this.options.percentageThresholdColorVariance;
-      const highThreshold = this.options.maxpercentageThresholdColorVariance;
+  const lowThreshold = this.options.percentageThresholdColorVariance;
+  const highThreshold = this.options.maxPercentageThresholdColorVariance;
       const len = this.priceAxisData.length;
 
       return data.map(([timeIndex, priceIndex, volume, percentage]) => {
         let color;
         // If percentage is zero or falsy, render the wall as white
-        if (!Number.isFinite(percentage) || percentage <= 0) {
+        if (!Number.isFinite(percentage) || percentage <= 0 || !percentage) {
           color = '#ffffff';
         } else if (percentage < lowThreshold) {
           const colorIndex = Math.floor((percentage / lowThreshold) * 3);
@@ -1267,9 +1267,9 @@ const chart = new PluginChartCOB({
                 ]
               };
             },
-            borderRadius: 2,
+            borderRadius: 0,
             borderWidth: 0,
-            opacity: 0.85
+            opacity: 1
           },
           emphasis: {
             itemStyle: {
@@ -1307,9 +1307,9 @@ const chart = new PluginChartCOB({
                 ]
               };
             },
-            borderRadius: 2,
+            borderRadius: 0,
             borderWidth: 0,
-            opacity: 0.85
+            opacity: 1
           },
           emphasis: {
             itemStyle: {
